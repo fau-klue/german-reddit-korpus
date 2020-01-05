@@ -21,37 +21,47 @@ to run all processing steps by themselves.
 2. run `extract-german-comments.py` on the raw comments and
    `extract-german-comment-ids.py` on the thus created
    `*-de.ldjson.gz`
-   - this will identify German comments
-3. *TODO* statistical analysis
-4. run `threads-extract-ids.py` on `*-de.ldjson.gz`
+   - this will identify comments that are most likely German
+3. run `prop_german.R` on the directory containing the `*meta.tsv.gz`
+   files created in the second step
+   - for each month, this will compute the proportion of German
+     comments in each subreddit containing at least one German
+     comment
+4. run `subreddits.R` on the directory containing the
+   `*-german_subreddits_prop.csv` files created in the previous step
+   - creates `stats.csv`: statistics for all subreddits and months
+   - creates `stats_filtered`: subreddit filter; retains only
+     subreddits where the proportion of comments classified as German
+     is above the dynamic threshold (see paper for details)
+5. run `threads-extract-ids.py` on `*-de.ldjson.gz`
    - this will extract all threads IDs with at least one German
      comment
-5. run `threads-extract.py` on the thus created
+6. run `threads-extract.py` on the thus created
    `*-thread-ids.tsv.gz` and the raw comments
    - this will extract all comments of threads that contain at least
      one German comment
-6. run `threads-sort.py` on the thus created `*-de-threads.ldjson.gz`,
+7. run `threads-sort.py` on the thus created `*-de-threads.ldjson.gz`,
    saving the output in `threads-all.ldjson.gz`
    - this will sort the comments into threads
-7. run `threads-language.py` on `stats_filtered.csv.gz`,
+8. run `threads-language.py` on `stats_filtered.csv.gz`,
    `data/german-comment-ids.txt.gz` and the above created
    `threads-all.ldjson.gz`, saving the results in
    `threads-filtered.ldjson.gz` and the scores in
    `threads-all-lang-scores.tsv.gz`
    - this will filter out German threads with our combined approach
      (see paper for details)
-8. run `threads-add-submissions.py` on the raw submissions and the
+9. run `threads-add-submissions.py` on the raw submissions and the
    `threads-all-lang-scores.tsv.gz`
    - this will filter out all submissions of German threads
-9. *TODO* annotate all German comments and submissions
-10. *TODO* run `build-vrt.py`
+10. *TODO* annotate all German comments and submissions
+11. *TODO* run `build-vrt.py`
 
 ## Shortcuts
 NB: the output files of the following steps can be found in the
 `data/` sub-folder:
 - step 2 (`german-comment-ids.txt.gz`)
-- step 3 (`stats_filtered.csv.gz`)
-- step 7 (`threads-all-lang-scores.tsv.gz`)
+- step 4 (`stats_filtered.csv.gz`)
+- step 8 (`threads-all-lang-scores.tsv.gz`)
 
  
 ## Additional Files
