@@ -30,7 +30,7 @@ to run all processing steps by themselves.
 4. run `subreddits.R` on the directory containing the
    `*-german_subreddits_prop.csv` files created in the previous step
    - creates `stats.csv`: statistics for all subreddits and months
-   - creates `stats_filtered`: subreddit filter; retains only
+   - creates `stats_filtered.csv`: subreddit filter; retains only
      subreddits where the proportion of comments classified as German
      is above the dynamic threshold (see paper for details)
 5. run `threads-extract-ids.py` on `*-de.ldjson.gz`
