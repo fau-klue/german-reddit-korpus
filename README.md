@@ -22,7 +22,7 @@ to run all processing steps by themselves.
    `extract-german-comment-ids.py` on the thus created
    `*-de.ldjson.gz`
    - this will identify comments that are most likely German
-3. run `prop_german.R` on the directory containing the `*meta.tsv.gz`
+3. run `prop_german.R` on the directory containing the `*-lang.tsv.gz`
    files created in the second step
    - for each month, this will compute the proportion of German
      comments in each subreddit containing at least one German
