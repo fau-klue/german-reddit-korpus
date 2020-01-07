@@ -4,7 +4,7 @@ args <- commandArgs(trailingOnly = TRUE)
 # For each month, compute the proportion of "German" comments
 # in each subreddit
 # 
-# Usage: ./prop_german.R <path to directory with *meta.tsv.gz files>
+# Usage: ./prop_german.R <path to directory with *lang.tsv.gz files>
 # <output directory> <optional: TRUE or 1 if existing output files
 # should be overwritten>
 #
@@ -41,7 +41,7 @@ if(length(args) == 0) {
 }
 
 files <- list.files(path_in,
-                    pattern = "*meta.tsv.gz",
+                    pattern = "*lang.tsv.gz",
                     full.names = FALSE)
 
 for (file in files) {
