@@ -53,6 +53,16 @@ to run all processing steps by themselves.
 9. run `threads-add-submissions.py` on the raw submissions and the
    `threads-all-lang-scores.tsv.gz`
    - this will filter out all submissions of German threads
+10. run `reddit_ldjson_to_xml.py` on the filtered threads and
+    submissions (`reddit_ldjson_to_xml.py -p tokenized/ *.ldjson.gz`)
+    - this will extract metadata and text, and convert the
+      Reddit-flavored Markdown to XML
+    - note that this step uses Reddit's own [snudown Markdown
+      parser](https://github.com/reddit/snudown/) and only works with
+      Python2.
+11. *TODO* tokenize all files with SoMaJo
+11. *TODO* tag everything with SoMeWeTa, then do some
+    STTS_IBK-specific postprocessing
 10. *TODO* annotate all German comments and submissions
 11. *TODO* run `build-vrt.py`
 
@@ -63,7 +73,7 @@ NB: the output files of the following steps can be found in the
 - step 4 (`stats_filtered.csv.gz`)
 - step 8 (`threads-all-lang-scores.tsv.gz`)
 
- 
+
 ## Additional Files
 - `data/thread-lang-annotated.tsv.gz` contains a manually annotated
   stratified sample of threads
