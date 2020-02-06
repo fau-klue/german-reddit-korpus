@@ -60,11 +60,15 @@ to run all processing steps by themselves.
     - note that this step uses Reddit's own [snudown Markdown
       parser](https://github.com/reddit/snudown/) and only works with
       Python2.
-11. *TODO* tokenize all files with SoMaJo
-11. *TODO* tag everything with SoMeWeTa, then do some
-    STTS_IBK-specific postprocessing
-10. *TODO* annotate all German comments and submissions
-11. *TODO* run `build-vrt.py`
+11. tokenization and sentence splitting with [SoMaJo](https://github.com/tsproisl/SoMaJo) (`somajo-tokenizer -x --split_sentences`)
+12. tag everything with
+    [SoMeWeTa](https://github.com/tsproisl/SoMeWeTa) (`somewe-tagger
+    --tag german_web_social_media_2018-12-21.model -x`), then do some
+    [STTS_IBK-specific
+    postprocessing](https://github.com/tsproisl/SoMeWeTa/blob/master/utils/STTS_IBK_postprocessor)
+    (`SoMeWeTa/utils/STTS_IBK_postprocessor -x`)
+13. *TODO* annotate all German comments and submissions
+14. *TODO* run `build-vrt.py`
 
 ## Shortcuts
 NB: the output files of the following steps can be found in the
