@@ -81,3 +81,13 @@ NB: the output files of the following steps can be found in the
 ## Additional Files
 - `data/thread-lang-annotated.tsv.gz` contains a manually annotated
   stratified sample of threads
+
+
+## References
+
+- Blombach, Andreas, Natalie Dykes, Philipp Heinrich, Besim Kabashi,
+  and Thomas Proisl. 2020. “A Corpus of German Reddit Exchanges
+  (GeRedE).” In *Proceedings of the 12th Conference on Language
+  Resources and Evaluation (LREC 2020)*, 6310–6316. Marseille:
+  European Language Resources Association.
+  [PDF](http://www.lrec-conf.org/proceedings/lrec2020/pdf/2020.lrec-1.774.pdf).
