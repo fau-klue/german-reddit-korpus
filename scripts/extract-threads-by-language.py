@@ -40,25 +40,12 @@ def sanitize_text(text):
     return sanitized_text
 
 
-@functools.lru_cache(maxsize=2 ** 16)
-def check_dict(language, word):
-    return language_dicts[language].check(word)
-
-
-@functools.lru_cache(maxsize=2 ** 16)
-def check_dict_en(word):
-    return language_dicts["en"].check(word)
-
-
 def get_error_rate(words, target_lang):
     errors = 0
     total = len(words)
-    cd = functools.partial(check_dict, target_lang)
-    if target_lang == "en":
-        cd = check_dict_en
     wordfreq = collections.Counter(words)
     for word, freq in wordfreq.items():
-        if not cd(word):
+        if not language_dicts[target_lang](word):
             errors += freq
     return errors / total
 
@@ -236,10 +223,10 @@ def set_global_variables():
     # target languages in decreasing order (most to fewest comments):
     target_languages = ["de", "it", "sq"]
     global language_dicts
-    language_dicts["en"] = enchant.Dict("en_US")
-    language_dicts["de"] = enchant.Dict("de_DE")
-    language_dicts["it"] = enchant.Dict("it_IT")
-    language_dicts["sq"] = enchant.Dict("sq_AL")
+    language_dicts["en"] = functools.lru_cache(2 ** 16)(enchant.Dict("en_US").check)
+    language_dicts["de"] = functools.lru_cache(2 ** 16)(enchant.Dict("de_DE").check)
+    language_dicts["it"] = functools.lru_cache(2 ** 16)(enchant.Dict("it_IT").check)
+    language_dicts["sq"] = functools.lru_cache(2 ** 16)(enchant.Dict("sq_AL").check)
     global regex
     regex["url"] = re.compile(r"\(?http[^ ]+\)?")
     regex["word"] = re.compile(r"\w+", re.UNICODE)
