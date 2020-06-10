@@ -90,7 +90,7 @@ NB: the output files of the following steps can be found in the
   (GeRedE).” In *Proceedings of the 12th Conference on Language
   Resources and Evaluation (LREC 2020)*, 6310–6316. Marseille:
   European Language Resources Association.
-  [PDF](http://www.lrec-conf.org/proceedings/lrec2020/pdf/2020.lrec-1.774.pdf).
+  [PDF](https://www.aclweb.org/anthology/2020.lrec-1.774.pdf).
 
   ```bibtex
   @InProceedings{Blombach_et_al_LREC:2020,
