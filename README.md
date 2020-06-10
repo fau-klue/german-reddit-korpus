@@ -91,3 +91,18 @@ NB: the output files of the following steps can be found in the
   Resources and Evaluation (LREC 2020)*, 6310–6316. Marseille:
   European Language Resources Association.
   [PDF](http://www.lrec-conf.org/proceedings/lrec2020/pdf/2020.lrec-1.774.pdf).
+
+  ```bibtex
+  @InProceedings{Blombach_et_al_LREC:2020,
+    author =    {Blombach, Andreas and Dykes, Natalie and Heinrich,
+                 Philipp and Kabashi, Besim and Proisl, Thomas},
+    title =     {A Corpus of {G}erman {R}eddit Exchanges ({GeRedE})},
+    year =      {2020},
+    booktitle = {Proceedings of the 12th Conference on Language
+                 Resources and Evaluation ({LREC} 2020)},
+    pages =     {6310--6316},
+    publisher = {European Language Resources Association},
+    address =   {Marseille},
+    url =       {https://www.aclweb.org/anthology/2020.lrec-1.774},
+  }
+  ```
