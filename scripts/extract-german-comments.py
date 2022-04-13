@@ -4,18 +4,19 @@
 # based on a script available from https://github.com/adbar/german-reddit
 # original copyright Adrien Barbaresi, 2015.
 # MIT license
-# modifications by Philipp Heinrich, 2019.
+# modifications by Philipp Heinrich, 2022.
 
-import ujson                    # pip3 install ujson
-import re
 import argparse
 import gzip
+import re
 from glob import glob
-from utils import path2lines, multi_proc
 
-# language specific imports
-import langid    # pip3 install langid
-import enchant   # pip3 install pyenchant
+import enchant  # pip3 install pyenchant
+import langid  # pip3 install langid
+import ujson  # pip3 install ujson
+
+from utils import multi_proc, path2lines
+
 dict_en = enchant.Dict("en_US")
 dict_de = enchant.Dict("de_DE")
 
@@ -76,6 +77,8 @@ def process_file(path_in):
     # do the actual processing
     with gzip.open(path_german, "wt") as f_german, gzip.open(path_meta, "wt") as f_meta:
         for line in path2lines(path_in):
+            from pprint import pprint
+            pprint(line)
             result = process_line(line)
             f_meta.write("\t".join(
                 [result['idx'], result['subreddit'], str(result['german'])]
@@ -101,7 +104,7 @@ def main():
     paths_in = glob(args.inputglob)
 
     # process files
-    multi_proc(process_file, paths_in, nr_cpus=args.nr_cpus)
+    multi_proc(process_file, paths_in, nr_cpus=args.nr_proc)
 
 
 if __name__ == "__main__":

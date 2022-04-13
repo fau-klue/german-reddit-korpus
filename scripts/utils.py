@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# compression formats
-import gzip
 import bz2
+import gzip
 import lzma
-import zstandard as zstd
-# for multi processing
-from tqdm import tqdm
 from multiprocessing import Pool
+
+import zstandard as zstd
+from tqdm import tqdm
 
 
 def multi_proc(processor, items, nr_cpus=2):
