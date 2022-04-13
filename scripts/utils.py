@@ -56,7 +56,7 @@ def path2lines(path_in):
 
     elif compression == 'zst':
         with open(path_in, 'rb') as fh:
-            dctx = zstd.ZstdDecompressor()
+            dctx = zstd.ZstdDecompressor(max_window_size=2147483648)
             with dctx.stream_reader(fh) as reader:
                 previous_line = ""
                 while True:
