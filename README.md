@@ -18,6 +18,7 @@ to run all processing steps by themselves.
 1. download raw data from https://files.pushshift.io/reddit
    - it is recommended, though not necessary, to re-compress all files
    into gzip or bz2 format
+   - you need both comments and submissions (from the respective subdirectories)
 2. run `extract-german-comments.py` on the raw comments and
    `extract-german-comment-ids.py` on the thus created
    `*-de.ldjson.gz`
