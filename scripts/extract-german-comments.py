@@ -77,8 +77,6 @@ def process_file(path_in):
     # do the actual processing
     with gzip.open(path_german, "wt") as f_german, gzip.open(path_meta, "wt") as f_meta:
         for line in path2lines(path_in):
-            from pprint import pprint
-            pprint(line)
             result = process_line(line)
             f_meta.write("\t".join(
                 [result['idx'], result['subreddit'], str(result['german'])]
