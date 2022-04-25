@@ -9,6 +9,8 @@ tqdm = "*"
 pyenchant = "*"
 langid = "*"
 ujson = "*"
+fasttext = "*"
+pandas = "*"
 
 [dev-packages]
 

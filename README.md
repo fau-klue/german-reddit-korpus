@@ -1,11 +1,11 @@
 # GeRedE: A Corpus of German Reddit Exchanges
-GeRedE is a 270 million token German CMC corpus containing
-approximately 380,000 submissions and 6,800,000 comments posted on
-[Reddit](https://www.reddit.com) between 2010 and 2018. Reddit is a
-popular online platform combining social news aggregation, discussion
-and micro-blogging. The CWB-indexed version of our final corpus is
-available to registered academic users via
-[CQPweb](https://corpora.linguistik.uni-erlangen.de/cqpweb/gerede_v1)
+GeRedE is a xxx million token German CMC corpus containing
+approximately xxx submissions and xxx comments posted on
+[Reddit](https://www.reddit.com) between 2010 and mid-2021. Reddit is
+a popular online platform combining social news aggregation,
+discussion and micro-blogging. The CWB-indexed version of our final
+corpus is available to registered academic users via
+[CQPweb](https://corpora.linguistik.uni-erlangen.de/cqpweb/gerede_v2)
 
 This repository contains the scripts we used to extract German
 submissions and comments from the vast amount of data Jason
@@ -14,15 +14,24 @@ contains the IDs of all submissions and comments included in our
 corpus, so that those who wish to recreate our corpus are not required
 to run all processing steps by themselves.
 
+Install all dependencies e.g. using the provided `Pipfile`.  Note that
+you will need the German
+[dictionary](https://pyenchant.github.io/pyenchant/install.html#installing-a-dictionary)
+for `pyenchant` and that this dictionary is named `hunspell-de-de`.
+On Ubuntu, you can run
+
+    sudo apt install hunspell-de-de
+
+
 ## Steps for Recreating the Corpus
-1. download raw data from https://files.pushshift.io/reddit
-   - it is recommended, though not necessary, to re-compress all files
-   into gzip or bz2 format
+1. download raw data
    - you need both comments and submissions (from the respective subdirectories)
-2. run `extract-german-comments.py` on the raw comments and
+   - https://files.pushshift.io/reddit
+   
+2. identify comments that are most likely German
+   - run `extract-german-comments.py` on the raw comments and
    `extract-german-comment-ids.py` on the thus created
    `*-de.ldjson.gz`
-   - this will identify comments that are most likely German
 3. run `prop_german.R` on the directory containing the `*-lang.tsv.gz`
    files created in the second step
    - for each month, this will compute the proportion of German
@@ -34,6 +43,7 @@ to run all processing steps by themselves.
    - creates `stats_filtered.csv`: subreddit filter; retains only
      subreddits where the proportion of comments classified as German
      is above the dynamic threshold (see paper for details)
+
 5. run `threads-extract-ids.py` on `*-de.ldjson.gz`
    - this will extract all threads IDs with at least one German
      comment
@@ -51,23 +61,28 @@ to run all processing steps by themselves.
    `threads-all-lang-scores.tsv.gz`
    - this will filter out German threads with our combined approach
      (see paper for details)
+
 9. run `threads-add-submissions.py` on the raw submissions and the
    `threads-all-lang-scores.tsv.gz`
    - this will filter out all submissions of German threads
+
 10. run `reddit_ldjson_to_xml.py` on the filtered threads and
     submissions (`reddit_ldjson_to_xml.py -p tokenized/ *.ldjson.gz`)
     - this will extract metadata and text, and convert the
       Reddit-flavored Markdown to XML
     - note that this step uses Reddit's own [snudown Markdown
-      parser](https://github.com/reddit/snudown/) and only works with
-      Python2.
-11. tokenization and sentence splitting with [SoMaJo](https://github.com/tsproisl/SoMaJo) (`somajo-tokenizer -x --split_sentences`)
+      parser](https://github.com/reddit/snudown/).
+
+11. tokenization and sentence splitting with
+    [SoMaJo](https://github.com/tsproisl/SoMaJo) (`somajo-tokenizer -x
+    --split_sentences`)
 12. tag everything with
     [SoMeWeTa](https://github.com/tsproisl/SoMeWeTa) (`somewe-tagger
     --tag german_web_social_media_2018-12-21.model -x`), then do some
     [STTS_IBK-specific
     postprocessing](https://github.com/tsproisl/SoMeWeTa/blob/master/utils/STTS_IBK_postprocessor)
     (`SoMeWeTa/utils/STTS_IBK_postprocessor -x`)
+
 13. *TODO* annotate all German comments and submissions
 14. *TODO* run `build-vrt.py`
 
