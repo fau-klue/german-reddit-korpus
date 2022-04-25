@@ -4,6 +4,7 @@
 # based on a script available from https://github.com/adbar/german-reddit
 # original copyright Adrien Barbaresi, 2015.
 # MIT license
+
 # modifications by Philipp Heinrich, 2022.
 
 import argparse
@@ -11,14 +12,10 @@ import gzip
 import re
 from glob import glob
 
-import enchant  # pip3 install pyenchant
-import langid  # pip3 install langid
-import ujson  # pip3 install ujson
+import langid                   # pip3 install langid
+import ujson                    # pip3 install ujson
 
-from utils import multi_proc, path2lines
-
-dict_en = enchant.Dict("en_US")
-dict_de = enchant.Dict("de_DE")
+from utils import multi_proc, path2lines, spell_check
 
 
 # line-by-line filtering
@@ -32,6 +29,7 @@ def process_line(line):
     sanitized_body = sanitized_body.replace('\n', ' ')
     sanitized_body = re.sub(r'\(?http[^ ]+\)?', '', sanitized_body)
 
+    # don't categorize very short or deleted texts
     if len(sanitized_body) <= 10 or sanitized_body == '[deleted]':
         german = None
 
@@ -39,26 +37,17 @@ def process_line(line):
         german = False
 
         # first test: spell-checking
-        tcount = 0
-        errors_en = 0
-        errors_de = 0
-        for token in re.findall(r'\w+', sanitized_body, re.UNICODE):
-            tcount += 1
-            if dict_en.check(token) is False:
-                errors_en += 1
-            if dict_de.check(token) is False:
-                errors_de += 1
+        potentially_german = spell_check(sanitized_body)
 
-        if tcount != 0 and ((errors_en/tcount) > 0.3) and ((errors_de/tcount) < 0.7):
-
-            # second test: language classification
+        # second test: language classification
+        if potentially_german:
             langid_response = langid.classify(sanitized_body)
             if langid_response[0] == 'de':
                 german = True
 
     return {
         'idx': parsed_json['id'],
-        'txt': sanitized_body,
+        # 'txt': sanitized_body,
         'line': line,
         'subreddit': parsed_json['subreddit'],
         'german': german
@@ -82,7 +71,7 @@ def process_file(path_in):
                 [result['idx'], result['subreddit'], str(result['german'])]
             ) + "\n")
             if result['german']:
-                f_german.write(result['line'])
+                f_german.write(result['line'] + "\n")
 
 
 def main():

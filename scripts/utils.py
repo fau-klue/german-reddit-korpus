@@ -4,10 +4,30 @@
 import bz2
 import gzip
 import lzma
+import re
 from multiprocessing import Pool
 
+import enchant                  # pip3 install pyenchant
 import zstandard as zstd
 from tqdm import tqdm
+
+dict_en = enchant.Dict("en_US")
+dict_de = enchant.Dict("de_DE")
+
+
+def spell_check(text):
+
+    tcount = 0
+    errors_en = 0
+    errors_de = 0
+    for token in re.findall(r'\w+', text, re.UNICODE):
+        tcount += 1
+        if dict_en.check(token) is False:
+            errors_en += 1
+        if dict_de.check(token) is False:
+            errors_de += 1
+
+    return tcount != 0 and ((errors_en/tcount) > 0.3) and ((errors_de/tcount) < 0.7)
 
 
 def multi_proc(processor, items, nr_cpus=2):
