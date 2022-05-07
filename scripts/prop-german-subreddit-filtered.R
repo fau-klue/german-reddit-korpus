@@ -8,9 +8,9 @@ suppressPackageStartupMessages(library(tidyverse))
 
 parser <- ArgumentParser()
 parser$add_argument("glob_in",
-                    help = "glob to input files")
+                    help = "glob to thread statistics")
 parser$add_argument("path_subreddit",
-                    help = "glob to input files")
+                    help = "path to subreddit statistics")
 parser$add_argument("path_out",
                     help = "path to output")
 args <- parser$parse_args()
@@ -22,19 +22,23 @@ modus <- function(x) {
 }
 
 # subreddit filter
-german.subreddits <- read_tsv(args$path_subreddit, col_types = "cddd") %>%
+print("reading subreddit statistics")
+german.subreddits <- fread(args$path_subreddit) %>%
   mutate(keep = confidence > (exp(-sqrt(n)/4) + .1)) %>% 
   filter(keep) %>% 
   pull(subreddit)
+print(str_c("keeping ", as.character(length(german.subreddits)), " subreddits"))
 
+# input files
 paths <- Sys.glob(args$glob_in)
 print(str_c("collected ", as.character(length(paths)), " files"))
 
 d <- tibble()
 for (p in paths){
   print(p)
-  tmp <- fread(p, col_types = "ccddd") %>%
+  tmp <- fread(p) %>%
     filter(subreddit %in% german.subreddits)
+  print(str_c("number of threads: ", as.character(nrow(tmp))))
   d <- rbind(d, tmp)
 }
 

@@ -16,6 +16,7 @@ def extract_threads(path_in):
         for line in path2lines(path_in):
             row = ujson.loads(line)
             if row['link_id'] in link_ids:
+                line = line + "\n" if not line.endswith("\n") else line
                 f_out.write(line)
 
 
@@ -24,7 +25,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--path_link_ids',
                         type=str,
-                        help='path to file containing link_ids of potentialls German threads',
+                        help='path to file containing link_ids (threads) to extract',
                         default='/cip/corpora/Web/Reddit/raw/german-thread-ids.txt.gz')
     parser.add_argument('--glob_raw',
                         type=str,
