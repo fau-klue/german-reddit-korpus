@@ -26,7 +26,7 @@ print(str_c("collected ", as.character(length(paths)), " files"))
 d <- tibble()
 for (p in paths){
   print(p)
-  d <- rbind(d, read_tsv(p))
+  d <- rbind(d, read_tsv(p, show_col_types = F))
 }
 
 var <- colnames(d)[1]
