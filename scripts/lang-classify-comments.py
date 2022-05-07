@@ -46,30 +46,34 @@ def process_file(path_in):
     compression = path_in.split(".")[-1]
 
     # set path to output
-    path_meta = path_in.replace("." + compression, "-lang.tsv.gz")
+    path_lang = path_in.replace("." + compression, "-lang.tsv.gz")
+    path_lang_de = path_in.replace("." + compression, "-lang-de.tsv.gz")
+
+    header_line = "\t".join([
+        'comment_id',
+        'created_utc',
+        'link_id',         # thread
+        'parent_id',       # actual parent (submission or comment)
+        'subreddit',
+        'subreddit_id',
+        'language',
+        'confidence',
+        'length'
+    ]) + "\n"
 
     # do the actual processing
-    with gzip.open(path_meta, "wt") as f_meta:
+    with gzip.open(path_lang, "wt") as f_lang, gzip.open(path_lang_de, "wt") as f_lang_de:
 
         # header
-        f_meta.write("\t".join([
-            'comment_id',
-            'created_utc',
-            'link_id',         # thread
-            'parent_id',       # actual parent (submission or comment)
-            'subreddit',
-            'subreddit_id',
-            'language',
-            'confidence',
-            'length'
-        ]) + "\n")
+        f_lang.write(header_line)
+        f_lang_de.write(header_line)
 
         for line in path2lines(path_in):
 
             comment = ujson.loads(line.strip())
             analysis = process_line(comment)
 
-            f_meta.write("\t".join([
+            data_line = "\t".join([
                 comment['id'],
                 str(comment['created_utc']),
                 comment['link_id'],
@@ -79,7 +83,12 @@ def process_file(path_in):
                 analysis['language'],
                 analysis['confidence'],
                 analysis['length']
-            ]) + "\n")
+            ]) + "\n"
+
+            f_lang.write(data_line)
+
+            if comment['language'] == '__label__de':
+                f_lang_de.write(data_line)
 
 
 def main():
@@ -91,12 +100,12 @@ def main():
                         help='glob to input files')
     parser.add_argument('--lang_model',
                         type=str,
-                        help='path to language model used by fasttext (.bin)',
-                        default="/home/ausgerechnet/corpora/models/lid.176.bin")
+                        help='path to language model used by fasttext [lid.176.bin]',
+                        default="lid.176.bin")
     parser.add_argument('--nr_proc',
                         type=int,
-                        default=2,
-                        help='how many processes to spawn')
+                        help='how many processes to spawn [2]',
+                        default=2)
     args = parser.parse_args()
 
     # glob input paths
