@@ -3,3 +3,5 @@ local
 Pipfile.lock
 .Rproj.user
 *.Rproj
+.RData
+.Rhistory

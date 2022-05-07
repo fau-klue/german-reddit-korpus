@@ -6,10 +6,8 @@
 import gzip
 from argparse import ArgumentParser
 from glob import glob
-from pandas import read_csv
 from utils import multi_proc
 
-# TODO: include in extract-german-comments.py
 
 def main(path_in, lang="de"):
 
@@ -24,7 +22,7 @@ def main(path_in, lang="de"):
                     f_out.write(line)
             except IndexError:
                 print(row)
-        
+
 
 if __name__ == '__main__':
 
