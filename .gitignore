@@ -5,3 +5,4 @@ Pipfile.lock
 *.Rproj
 .RData
 .Rhistory
+__pycache__
