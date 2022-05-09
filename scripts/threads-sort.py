@@ -3,9 +3,13 @@
 
 import argparse
 import gzip
+import os
 import ujson
-from glob import glob
 from collections import defaultdict
+from datetime import datetime
+from glob import glob
+
+from utils import MultiFileWriter
 
 
 def collect_threads(paths_submissions, paths_comments):
@@ -38,26 +42,29 @@ def collect_threads(paths_submissions, paths_comments):
 
 def sort_threads(threads_dict):
 
-    print("sorting threads internally")
+    print("sorting submission and comments of each thread by creation date")
     # sort all threads by created_utc of comments / submissions
     threads = list()
     for thread_id, thread_list in threads_dict.items():
         threads.append(sorted(thread_list, key=lambda d: int(d['created_utc'])))
 
-    print("sorting threads globally")
+    print("sorting threads by creation date")
     # sort threads by earliest created_utc
     threads = sorted(threads, key=lambda d: int(d[0]['created_utc']))
 
     return threads
 
 
-def write_threads(threads, path_out):
-
+def write_threads(threads, dir_out, prefix_out='gerede-'):
+    # write threads sorted to paths defined by month
     print("writing threads")
-    with gzip.open(path_out, "wt") as f_out:
-        for thread in threads:
-            for comment in thread:
-                f_out.write(ujson.dumps(comment) + "\n")
+    postfix = '.ldjson.gz'
+    mfw = MultiFileWriter()
+    for thread in threads:
+        month = str(datetime.fromtimestamp(int(thread[0]['created_utc'])).date())[:7]
+        path_out = os.path.join(dir_out, prefix_out + month + postfix)
+        mfw.write(path_out, ujson.dumps(thread) + "\n")
+    mfw.close()
 
 
 if __name__ == '__main__':
@@ -69,9 +76,9 @@ if __name__ == '__main__':
     parser.add_argument('glob_comments',
                         type=str,
                         help='glob to comment files')
-    parser.add_argument('path_out',
+    parser.add_argument('dir_out',
                         type=str,
-                        help="path to save result to")
+                        help="directory to save monthly files to")
     args = parser.parse_args()
 
     paths_submissions = sorted(glob(args.glob_submissions))
@@ -79,4 +86,4 @@ if __name__ == '__main__':
 
     threads_dict = collect_threads(paths_submissions, paths_comments)
     threads = sort_threads(threads_dict)
-    write_threads(threads, args.path_out)
+    write_threads(threads, args.dir_out)
