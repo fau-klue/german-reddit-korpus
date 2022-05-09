@@ -5,7 +5,16 @@ import datetime
 import json
 import re
 import snudown
+import xml.etree.ElementTree as ET
 import xml.sax.saxutils
+
+
+def is_xml(xml_str):
+    try:
+        ET.fromstring(xml_str)
+    except ET.ParseError:
+        return False
+    return True
 
 
 def repl_dec(match):
@@ -34,20 +43,19 @@ def escape_spoiler(match):
 
 def process_markdown(markdown):
 
-    dec_entities = re.compile(r"&#(\d+);")
-    hex_entities = re.compile(r"&#x([0-9a-f]+);", re.IGNORECASE)
-    named_entities = re.compile(r"&[a-z0-9]+;", re.IGNORECASE)
-    named_entities_wo_semicolon = re.compile(r"&[a-z0-9]+(?![;a-z0-9])", re.IGNORECASE)
-    spoiler = re.compile(r'(?<=<a href="[#/]s" title=")([^>]+)(?=">)')
-    html_entities = get_html_entities()
-
     markdown = xml.sax.saxutils.unescape(markdown)
     html = snudown.markdown(markdown, renderer=snudown.RENDERER_USERTEXT)
-    html = dec_entities.sub(repl_dec, html)
-    html = hex_entities.sub(repl_hex, html)
-    html = named_entities.sub(lambda x: html_entities[x.group()]["characters"], html)
-    html = named_entities_wo_semicolon.sub(lambda x: html_entities[x.group()]["characters"], html)
-    html = spoiler.sub(escape_spoiler, html)
+    html = DEC_ENTITIES.sub(repl_dec, html)
+    html = HEX_ENTITIES.sub(repl_hex, html)
+    html = NAMED_ENTITIES.sub(lambda x: HTML_ENTITIES[x.group()]["characters"], html)
+    html = NAMED_ENTITIES_WO_SEMICOLON.sub(lambda x: HTML_ENTITIES[x.group()]["characters"], html)
+    html = SPOILER.sub(escape_spoiler, html)
+    html = html.replace("\n\n", "\n")  # markdown parser adds empty line between paragraphs
+
+    if not is_xml("<text>\n" + html + "</text>"):
+        print("couldn't convert markdown to XML")
+        print(html)
+        return ""
 
     return html
 
@@ -117,14 +125,14 @@ def process_thread(thread):
         is_submission = "link_id" not in post.keys()
 
         if is_submission:
-            html, meta = process_submission(post)
+            xml_post, meta = process_submission(post)
         else:
-            html, meta = process_comment(post)
+            xml_post, meta = process_comment(post)
 
         records.append(meta)
 
         xml_str += (
-            '<text id="%s" is_submission="%s" author="%s" date="%s" link_id="%s"'
+            '<text id="%s" is_submission="%s" author="%s" date="%s" link_id="%s" '
             'is_submitter="%s" parent_id="%s" permalink="%s" subreddit="%s" subreddit_id="%s">\n') % (
             meta['idx'],
             str(meta['is_submission']),
@@ -137,7 +145,7 @@ def process_thread(thread):
             meta['subreddit'],
             meta['subreddit_id']
         )
-        xml_str += html.replace("\n\n", "\n")
+        xml_str += xml_post
         xml_str += '</text>\n'
 
     xml_str += "</thread>\n"
@@ -2382,3 +2390,11 @@ def get_html_entities():
     }
     """)
     return html_entities
+
+
+DEC_ENTITIES = re.compile(r"&#(\d+);")
+HEX_ENTITIES = re.compile(r"&#x([0-9a-f]+);", re.IGNORECASE)
+NAMED_ENTITIES = re.compile(r"&[a-z0-9]+;", re.IGNORECASE)
+NAMED_ENTITIES_WO_SEMICOLON = re.compile(r"&[a-z0-9]+(?![;a-z0-9])", re.IGNORECASE)
+SPOILER = re.compile(r'(?<=<a href="[#/]s" title=")([^>]+)(?=">)')
+HTML_ENTITIES = get_html_entities()
