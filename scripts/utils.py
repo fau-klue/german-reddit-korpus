@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import bz2
+import errno
 import gzip
 import lzma
 import os
