@@ -4,12 +4,22 @@ import argparse
 import datetime
 import gzip
 import json
+import ujson
 import os
 import re
 import xml.sax.saxutils
+from glob import glob
 
 import pandas as pd
 import snudown
+from utils import multi_proc
+
+
+def arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("glob_in", help="glob to files to read", type=str)
+    parser.add_argument('--nr_proc', type=int, help='how many processes to spawn [8]', default=8)
+    return parser.parse_args()
 
 
 def repl_dec(match):
@@ -36,72 +46,160 @@ def escape_spoiler(match):
     return match.group(1).replace('"', "&quot;")
 
 
-def arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--prefix", help="Prefix of paths to save results to", default="", type=str)
-    parser.add_argument("path", nargs="+", help="Files to parse", type=os.path.abspath)
-    return parser.parse_args()
+def process_markdown(markdown):
 
-
-def main():
-    ids, authors, dates, link_ids, is_submitters, parent_ids, permalinks, subreddits, subreddit_ids = [], [], [], [], [], [], [], [], []
-    args = arguments()
     dec_entities = re.compile(r"&#(\d+);")
     hex_entities = re.compile(r"&#x([0-9a-f]+);", re.IGNORECASE)
     named_entities = re.compile(r"&[a-z0-9]+;", re.IGNORECASE)
     named_entities_wo_semicolon = re.compile(r"&[a-z0-9]+(?![;a-z0-9])", re.IGNORECASE)
     spoiler = re.compile(r'(?<=<a href="[#/]s" title=")([^>]+)(?=">)')
-    renderer = snudown.RENDERER_USERTEXT
     html_entities = get_html_entities()
-    for filename in args.path:
-        base = os.path.basename(filename)
-        if base[-10:] == ".ldjson.gz":
-            base = base[:-10]
-        with gzip.open(filename, mode="rt") as f_in, gzip.open("%s%s.xml.gz" % (args.prefix, base), mode="wt") as f_out:
-            f_out.write("<corpus>\n")
-            for i, line in enumerate(f_in):
-                # if i == 1000:
-                #     break
-                post = json.loads(line)
-                print(post)
-                print(len(post))
-                ids.append(post["id"])
-                authors.append(post["author"])
-                dates.append(datetime.datetime.fromtimestamp(int(post["created_utc"])))
-                link_ids.append(post["link_id"])
-                is_submitters.append(post.get("is_submitter", ""))
-                parent_ids.append(post["parent_id"])
-                permalinks.append(post.get("permalink", ""))
-                subreddits.append(post["subreddit"])
-                subreddit_ids.append(post["subreddit_id"])
-                markdown = post["body"]
-                # markdown = markdown.encode("utf-8")
-                markdown = xml.sax.saxutils.unescape(markdown)
-                html = snudown.markdown(markdown, renderer=renderer)
-                # html = html.decode("utf-8")
-                html = dec_entities.sub(repl_dec, html)
-                html = hex_entities.sub(repl_hex, html)
-                html = named_entities.sub(lambda x: html_entities[x.group()]["characters"], html)
-                html = named_entities_wo_semicolon.sub(lambda x: html_entities[x.group()]["characters"], html)
-                html = spoiler.sub(escape_spoiler, html)
-                # html = html.encode("utf-8")
-                f_out.write('<text id="%s">\n' % ids[-1])
-                f_out.write(html)
-                f_out.write('</text>\n')
-            f_out.write("</corpus>\n")
-        meta_data = pd.DataFrame(
-            index=ids, data={
-                "author": authors,
-                "date": dates,
-                "link_id": link_ids,
-                "is_submitter": is_submitters,
-                "parent_id": parent_ids,
-                "permalink": permalinks,
-                "subreddit": subreddits,
-                "subreddit_id": subreddit_ids
-            }
+
+    markdown = xml.sax.saxutils.unescape(markdown)
+    html = snudown.markdown(markdown, renderer=snudown.RENDERER_USERTEXT)
+    html = dec_entities.sub(repl_dec, html)
+    html = hex_entities.sub(repl_hex, html)
+    html = named_entities.sub(lambda x: html_entities[x.group()]["characters"], html)
+    html = named_entities_wo_semicolon.sub(lambda x: html_entities[x.group()]["characters"], html)
+    html = spoiler.sub(escape_spoiler, html)
+
+    return html
+
+
+def process_submission(post):
+
+    # collect meta data
+    meta = dict()
+    meta['idx'] = post["id"]
+    meta['is_submission'] = True
+    meta['author'] = post["author"]
+    meta['date'] = str(datetime.datetime.fromtimestamp(int(post["created_utc"])))
+    meta['link_id'] = post["id"]                
+    meta['is_submitter'] = post.get("is_submitter", None)
+    meta['parent_id'] = post["id"]
+    meta['permalink'] = post.get("permalink", "")
+    meta['subreddit'] = post["subreddit"]
+    meta['subreddit_id'] = post["subreddit_id"]
+
+    # text
+    title = process_markdown(post["title"])
+    title = "<title>\n" + title + "</title>\n" if len(title) > 0 else ""
+    body = process_markdown(post["selftext"])
+    body = "<body>\n" + body + "</body>\n" if len(body) > 0 else ""
+    html = "\n".join([title, body]).rstrip("\n") + "\n"
+
+    return html, meta
+
+
+def process_comment(post):
+
+    # collect meta data
+    meta = dict()
+    meta['idx'] = post["id"]
+    meta['is_submission'] = False
+    meta['author'] = post["author"]
+    meta['date'] = str(datetime.datetime.fromtimestamp(int(post["created_utc"])))
+    meta['link_id'] = post["link_id"].split("_")[-1]
+    meta['is_submitter'] = post.get("is_submitter", None)
+    meta['parent_id'] = post["parent_id"]
+    meta['permalink'] = post.get("permalink", "")
+    meta['subreddit'] = post["subreddit"]
+    meta['subreddit_id'] = post["subreddit_id"]
+
+    # text
+    body = process_markdown(post["body"])
+    html = "<body>\n" + body + "</body>\n"
+
+    return html, meta
+
+
+def process_thread(thread):
+
+    submission = thread[0]      # or first encountered comment, if missing
+    is_submission = "link_id" not in submission.keys()
+    thread_id = submission['id'] if is_submission else submission['link_id']
+    subreddit = submission['subreddit']
+    
+    # thread header
+    xml_str = '<thread id="%s" subreddit="%s" includes_submission="%s">\n' % (
+        thread_id, subreddit, str(is_submission)
+    )
+
+    records = list()
+    for post in thread:
+
+        is_submission = "link_id" not in post.keys()
+
+        if is_submission:
+            html, meta = process_submission(post)
+        else:
+            html, meta = process_comment(post)
+
+        records.append(meta)
+
+        xml_str += '<text id="%s" is_submission="%s" author="%s" date="%s" link_id="%s" is_submitter="%s" parent_id="%s" permalink="%s" subreddit="%s" subreddit_id="%s">\n' % (
+            meta['idx'],
+            str(meta['is_submission']),
+            meta['author'],
+            meta['date'],
+            meta['link_id'],
+            str(meta['is_submitter']),
+            meta['parent_id'],
+            meta['permalink'],
+            meta['subreddit'],
+            meta['subreddit_id']
         )
-        meta_data.to_csv("%s%s.csv.gz" % (args.prefix, base), compression="gzip", encoding="utf-8")
+        xml_str += html.replace("\n\n", "\n")
+        xml_str += '</text>\n'
+
+    xml_str += "</thread>\n"
+
+    return xml_str, records
+
+
+def process_file(path_in):
+
+    # determine paths to write to
+    base = path_in              # os.path.basename(path_in)
+    if base[-10:] == ".ldjson.gz":
+        base = base[:-10]
+    path_meta = "%s.tsv.gz" % (base)
+    path_xml = "%s.xml.gz" % (base)
+
+    # write xml and collect meta data
+    records = list()
+    with gzip.open(path_in, mode="rt") as f_in, gzip.open(path_xml, mode="wt") as f_out:
+
+        f_out.write("<corpus>\n")
+
+        for i, thread_line in enumerate(f_in):
+            # print(i, end="\r")
+            # if i == 1000:
+            #     break
+
+            try:
+                thread = ujson.loads(thread_line)
+                xml_str, meta = process_thread(thread)
+                records.extend(meta)
+                f_out.write(xml_str)
+            except KeyError:
+                print("error processing following line:")
+                print(thread_line)
+                pass
+
+        f_out.write("</corpus>\n")
+
+    # save meta data separately as data frame
+    # print("\nsaving meta data")
+    meta_data = pd.DataFrame(records)
+    meta_data.to_csv(path_meta, compression="gzip", encoding="utf-8", sep="\t")
+
+
+def main():
+
+    args = arguments()
+    paths_in = glob(args.glob_in)
+    multi_proc(process_file, paths_in, nr_cpus=args.nr_proc)
 
 
 def get_html_entities():
