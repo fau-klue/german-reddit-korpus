@@ -16,14 +16,16 @@ from utils import multi_proc, path2lines
 
 def process_line(comment):
 
+    body = comment['body']
+
     # weird hex-encoding:
-    if re.search(r"&amp;#x", comment):
+    if re.search(r"&amp;#x", body):
         # TODO: should we also change these comments for all further steps?
-        comment = html.unescape(comment)
-        comment = html.unescape(comment)
+        body = html.unescape(body)
+        body = html.unescape(body)
 
     # sanitize text
-    body = comment['body'].replace('\r', '').replace('\n', ' ')
+    body = body.replace('\r', '').replace('\n', ' ')
     body = re.sub(r'\(?http[^ ]+\)?', '', body)
 
     # don't analyze deleted texts
