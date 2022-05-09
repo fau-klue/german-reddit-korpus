@@ -9,6 +9,9 @@ tqdm = "*"
 ujson = "*"
 fasttext = "*"
 pandas = "*"
+snudown = {path = "./../../snudown"}
+somajo = "*"
+someweta = "*"
 
 [dev-packages]
 
