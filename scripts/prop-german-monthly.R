@@ -7,9 +7,9 @@ suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(tidyverse))
 
 parser <- ArgumentParser()
-parser$add_argument("glob_in",
+parser$add_argument("--glob_in",
 	            help = "glob to input files",
-                    default = "/cip/corpora/Web/Reddit/raw/comments")
+                    default = "local/language-scores/comments/*-lang.tsv.gz")
 parser$add_argument("-o", "--overwrite",
                     action = "store_true",
                     help = "overwriting existing files?",
@@ -25,8 +25,8 @@ modus <- function(x) {
 aggregate.stats <- function(path.in){
 
   # paths to save results to
-  path.subreddit <- str_replace(path.in, "-lang.tsv.gz", "-lang-per-subreddit.tsv.gz")
-  path.thread <- str_replace(path.in, "-lang.tsv.gz", "-lang-per-thread.tsv.gz")
+  path.subreddit <- str_replace(path.in, "-lang.tsv.gz", "-de-per-subreddit.tsv.gz")
+  path.thread <- str_replace(path.in, "-lang.tsv.gz", "-de-per-thread.tsv.gz")
 
   cat(str_flatten(rep("=", 80)), "\n")
   cat("- input:", path.in, "\n")
@@ -50,7 +50,7 @@ aggregate.stats <- function(path.in){
   cat("- summarizing subreddits\n")
   d %>% 
     group_by(subreddit) %>% 
-    summarise(confidence = weighted.mean(confidence, length), 
+    summarise(confidence = weighted.mean(confidence, length),
               length = sum(length), 
               n = n()) %>%
     write_tsv(path.subreddit)

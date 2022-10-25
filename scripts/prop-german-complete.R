@@ -7,10 +7,12 @@ suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(tidyverse))
 
 parser <- ArgumentParser()
-parser$add_argument("glob_in",
-                    help = "glob to input files")
-parser$add_argument("path_out",
-                    help = "path to output")
+parser$add_argument("--glob_in",
+                    help = "glob to input files",
+		    default = "local/language-scores/comments/*de-per-subreddit.tsv.gz")
+parser$add_argument("--path_out",
+                    help = "path to output",
+		    default = "local/language-scores/RC-de-per-subreddit.tsv.gz")
 args <- parser$parse_args()
 
 modus <- function(x) {

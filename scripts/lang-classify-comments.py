@@ -5,7 +5,9 @@
 
 import argparse
 import gzip
+import html
 import re
+import os
 from glob import glob
 
 import ujson                    # pip3 install ujson
@@ -50,12 +52,20 @@ def process_line(comment):
 
 def process_file(path_in):
 
+    languages = LANGUAGES
+    
     # identify compression
     compression = path_in.split(".")[-1]
 
-    # set path to output
-    path_lang = path_in.replace("." + compression, "-lang.tsv.gz")
-    path_lang_de = path_in.replace("." + compression, "-lang-de.tsv.gz")
+    # set paths to output
+    drive, tail = os.path.split(path_in)
+    path_lang = os.path.join(DIR_OUT, tail.replace("." + compression, "-lang.tsv.gz"))
+
+    # open files for each language
+    files_languages = dict()
+    for lang in languages:
+        tail_lang = tail.replace("." + compression, f"-{lang}.tsv.gz")
+        files_languages[lang] = gzip.open(os.path.join(DIR_OUT, tail_lang), "wt")
 
     header_line = "\t".join([
         'comment_id',
@@ -70,11 +80,12 @@ def process_file(path_in):
     ]) + "\n"
 
     # do the actual processing
-    with gzip.open(path_lang, "wt") as f_lang, gzip.open(path_lang_de, "wt") as f_lang_de:
+    with gzip.open(path_lang, "wt") as f_lang:
 
         # header
         f_lang.write(header_line)
-        f_lang_de.write(header_line)
+        for lang in languages:
+            files_languages[lang].write(header_line)
 
         for line in path2lines(path_in):
 
@@ -95,29 +106,51 @@ def process_file(path_in):
 
             f_lang.write(data_line)
 
-            if comment['language'] == '__label__de':
-                f_lang_de.write(data_line)
+            for lang in languages:
+                if analysis['language'] == f'__label__{lang}':
+                    files_languages[lang].write(data_line)
+
+    for lang in languages:
+        files_languages[lang].close()
 
 
 def main():
 
     # parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('inputglob',
+    parser.add_argument('--inputglob',
                         type=str,
-                        help='glob to input files')
+                        help='glob to input files',
+                        default="local/raw/comments/*")
+    parser.add_argument('--dir_out',
+                        type=str,
+                        help='where to save the results',
+                        default="local/language-scores/comments/")
     parser.add_argument('--lang_model',
                         type=str,
                         help='path to language model used by fasttext [lid.176.bin]',
                         default="lid.176.bin")
     parser.add_argument('--nr_proc',
                         type=int,
-                        help='how many processes to spawn [2]',
-                        default=2)
+                        help='how many processes to spawn [8]',
+                        default=8)
+    parser.add_argument('--lang',
+                        type=str,
+                        nargs='+',
+                        default=['de'])
     args = parser.parse_args()
 
     # glob input paths
     paths_in = glob(args.inputglob)
+
+    # output
+    global DIR_OUT
+    DIR_OUT = args.dir_out
+    os.makedirs(DIR_OUT, exist_ok=True)
+
+    # languages
+    global LANGUAGES
+    LANGUAGES = args.lang
 
     # load language model
     path_model = args.lang_model

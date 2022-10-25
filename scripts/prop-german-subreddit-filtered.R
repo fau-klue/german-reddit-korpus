@@ -7,12 +7,15 @@ suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(tidyverse))
 
 parser <- ArgumentParser()
-parser$add_argument("glob_in",
-                    help = "glob to thread statistics")
-parser$add_argument("path_subreddit",
-                    help = "path to subreddit statistics")
-parser$add_argument("path_out",
-                    help = "path to output")
+parser$add_argument("--glob_in",
+                    help = "glob to thread statistics",
+		    default = "local/language-scores/comments/*de-per-thread.tsv.gz")
+parser$add_argument("--path_subreddit",
+                    help = "path to subreddit statistics",
+		    default = "local/language-scores/RC-de-per-subreddit.tsv.gz")
+parser$add_argument("--path_out",
+                    help = "path to output",
+		    default = "local/language-scores/RC-de-per-thread-subreddit-filtered.tsv.gz")
 args <- parser$parse_args()
 
 modus <- function(x) {
@@ -44,8 +47,8 @@ for (p in paths){
 
 d <- d %>% group_by(link_id) %>%
   summarise(subreddit = modus(subreddit),
-            confidence = weighted.mean(confidence, length), 
-            length = sum(length), 
+            confidence = weighted.mean(confidence, length),
+            length = sum(length),
             n = sum(n)) %>%
   arrange(desc(confidence)) %>%
   replace_na(list(confidence = 0)) %>%
