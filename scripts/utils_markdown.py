@@ -51,6 +51,7 @@ def process_markdown(markdown):
     html = NAMED_ENTITIES_WO_SEMICOLON.sub(lambda x: HTML_ENTITIES[x.group()]["characters"], html)
     html = SPOILER.sub(escape_spoiler, html)
     html = html.replace("\n\n", "\n")  # markdown parser adds empty line between paragraphs
+    html = html.replace("<p>", "<p>\n").replace("</p>", "\n</p>")
 
     if not is_xml("<text>\n" + html + "</text>"):
         print("couldn't convert markdown to XML")
