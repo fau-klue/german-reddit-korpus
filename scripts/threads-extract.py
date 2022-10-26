@@ -18,19 +18,25 @@ def extract_threads(path_in):
 
     with gzip.open(path_out, "wt") as f_out:
         for line in path2lines(path_in):
+
+            # load line
             try:
                 row = ujson.loads(line)
             except ujson.JSONDecodeError:
                 print(row)
 
-            if tail.startswith("RC"):  # comments
-                if row['link_id'] in link_ids:
-                    line = line.rstrip() + "\n"
-                    f_out.write(line)
-            elif tail.startswith("RS"):  # submissions
-                if row['id'] in ids:
-                    line = line.rstrip() + "\n"
-                    f_out.write(line)
+            # get id
+            if tail.startswith("RC"):
+                link_id = row['link_id'].split("_")[-1]  # comments: remove leading "t3_"
+            elif tail.startswith("RS"):
+                link_id = row['id']
+            else:
+                raise ValueError('only files starting with RS or RC can be processed')
+
+            # write
+            if link_id in link_ids:
+                line = line.rstrip() + "\n"
+                f_out.write(line)
 
 
 if __name__ == '__main__':
@@ -64,10 +70,9 @@ if __name__ == '__main__':
     print("getting relevant link-ids")
     df = read_csv(args.path_link_ids, sep="\t", index_col=0)
     df = df.loc[df['confidence'] > args.cut_off]
+    # ids are without leading "t3_"
     global link_ids
-    link_ids = set(df.index)
-    global ids
-    ids = set([idx.split("_")[-1] for idx in df.index])
+    link_ids = set([idx.split("_")[-1] for idx in df.index])
 
     print("looping through raw files")
     paths_raw = sorted(glob(args.glob_raw))
