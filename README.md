@@ -1,5 +1,5 @@
 # GeRedE: A Corpus of German Reddit Exchanges
-GeRedE is a xxx million token German CMC corpus containing approximately xxx submissions and xxx comments posted on [Reddit](https://www.reddit.com) between 2010 and mid-2021. Reddit is a popular online platform combining social news aggregation, discussion and micro-blogging. The CWB-indexed version of our final corpus is available to registered academic users via [CQPweb](https://corpora.linguistik.uni-erlangen.de/cqpweb/gerede_v2)
+GeRedE is a xxx million token German CMC corpus containing approximately xxx submissions and xxx comments posted on [Reddit](https://www.reddit.com) between 2010 and mid-2021. Reddit is a popular online platform combining social news aggregation, discussion and micro-blogging. The CWB-indexed version of our final corpus is available to registered academic users via [CQPweb](https://corpora.linguistik.uni-erlangen.de/cqpweb/gerede_v2).
 
 This repository contains the scripts we used to extract German submissions and comments from the vast amount of data Jason Baumgartner provides at https://files.pushshift.io/reddit. It also contains the IDs of all submissions and comments included in our corpus, so that those who wish to recreate our corpus are not required to run all processing steps by themselves.
 
@@ -14,7 +14,7 @@ In order to run the R scripts, you will need the following libraries:
     R.utils
     tidyverse
 
-You will need the German [dictionary](https://pyenchant.github.io/pyenchant/install.html#installing-a-dictionary) for `pyenchant` and that this dictionary is named `hunspell-de-de`.  On Ubuntu, you can run
+You will need the German [dictionary](https://pyenchant.github.io/pyenchant/install.html#installing-a-dictionary) `hunspell-de-de` for `pyenchant`.  On Ubuntu, you can run
 
     sudo apt install hunspell-de-de
 
@@ -30,13 +30,14 @@ You will need the German [dictionary](https://pyenchant.github.io/pyenchant/inst
    ```
    python3 scripts/lang-classify-comments.py
    ```
-   by default, this creates two files, one with scores for every language and one with scores for likely German comments
+   by default, this creates two files
    ```
-   local/language-scores/comments/RC_{YYYY}-{MM}-lang.tsv.gz
-   local/language-scores/comments/RC_{YYYY}-{MM}-de.tsv.gz
+   local/language-scores/comments/RC_{YYYY}-{MM}-lang.tsv.gz  # scores for every language
+   local/language-scores/comments/RC_{YYYY}-{MM}-de.tsv.gz    # scores for likely German comments only
    ```
-   NB: you can use `--lang` to modify which languages should be extracted
-   
+   you can use `--lang` to modify which languages should be extracted
+
+# TODO combine steps 3-5
 3. aggregate language scores (for German) monthly per thread and per subreddit
    ```
    Rscript scripts/prop-german-monthly.R
@@ -65,7 +66,7 @@ You will need the German [dictionary](https://pyenchant.github.io/pyenchant/inst
    local/language-scores/RC-de-per-thread-subreddit-filtered.tsv.gz
    ```
 
-6. extract submissions and comments from raw data
+6. extract submissions and comments from raw data (done separately so we can easily multiprocess)
    ```
    python3 scripts/threads-extract.py
    ```
@@ -74,23 +75,15 @@ You will need the German [dictionary](https://pyenchant.github.io/pyenchant/inst
    local/filtered-de/R(C|S)_{YYYY}-{MM}-de.ldjson.gz
    ```
 
-# TODO
-7. sort into threads
+7. collect and build XML texts and TSV table of meta data
    ```
-   python3 scripts/threads-sort.py "raw/comments/RC_{YYYY}-{MM}-lang-de.ldjson.gz" 
-   ```
-
-8. convert to XML and meta data
-   ```
-   python3 scripts/threads-to-xml.py "raw/comments/RC_{YYYY}-{MM}-lang-de.ldjson.gz"
+   python3 scripts/threads-process.py
    ```
    this creates
    ```
-   raw/comments/RC_{YYYY}-{MM}-lang-de.tsv.gz
-   raw/comments/RC_{YYYY}-{MM}-lang-de.xml.gz
+   local/gerede.xml.gz
+   local/gerede.tsv.gz
    ```
-
-9. build corpus
 
 
 ## References
