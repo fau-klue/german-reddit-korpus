@@ -80,15 +80,15 @@ if __name__ == '__main__':
     parser.add_argument('--glob_in',
                         type=str,
                         help='glob to dumps of comments and submissions',
-                        default="local/filtered-de/*ldjson.gz")
+                        default="local/languages/de/posts/*ldjson.gz")
     parser.add_argument('--path_xml',
                         type=str,
                         help="path to save texts",
-                        default="local/gerede.xml.gz")
+                        default="local/languages/de/gerede.xml.gz")
     parser.add_argument('--path_tsv',
                         type=str,
                         help="path to save meta data",
-                        default="local/gerede.tsv.gz")
+                        default="local/languages/de/gerede.tsv.gz")
 
     args = parser.parse_args()
 

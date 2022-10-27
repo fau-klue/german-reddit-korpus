@@ -45,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument('--path_link_ids',
                         type=str,
                         help='path to file containing link_ids (threads) to extract',
-                        default="local/language-scores/RC-de-per-thread-subreddit-filtered.tsv.gz")
+                        default="local/languages/RC-de-per-thread-subreddit-filtered.tsv.gz")
     parser.add_argument('--glob_raw',
                         type=str,
                         help='glob to raw files',
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--dir_out',
                         type=str,
                         help="where to save results",
-                        default="local/filtered-de/")
+                        default="local/languages/de/posts/")
     parser.add_argument('--cut_off',
                         default=0.1,
                         help="cut-off for confidence")
