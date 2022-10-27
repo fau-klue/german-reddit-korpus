@@ -148,7 +148,7 @@ def process_line(line):
         confidence
     ]) + "\n"
 
-    return data_line
+    return label, data_line
 
 
 def process_file(path_in):
@@ -160,7 +160,9 @@ def process_file(path_in):
 
     # set paths to output
     drive, tail = os.path.split(path_in)
-    path_lang = os.path.join(DIR_OUT, tail.replace("." + compression, "-lang.tsv.gz"))
+    drive_scores = os.path.join(DIR_OUT, "languages", "all", "scores")
+    os.makedirs(drive_scores, exist_ok=True)
+    path_scores = os.path.join(drive_scores, tail.replace("." + compression, ".tsv.gz"))
 
     header_line = "\t".join([
         'link_id',         # thread
@@ -178,10 +180,12 @@ def process_file(path_in):
     files_languages = dict()
     for lang in languages:
         tail_lang = tail.replace("." + compression, ".tsv.gz")
-        files_languages[lang] = gzip.open(os.path.join(DIR_OUT, lang, tail_lang), "wt")
+        drive_lang = os.path.join(DIR_OUT, "languages", lang, "scores")
+        os.makedirs(drive_lang, exist_ok=True)
+        files_languages[lang] = gzip.open(os.path.join(drive_lang, tail_lang), "wt")
 
     # loop through lines
-    with gzip.open(path_lang, "wt") as f_lang:
+    with gzip.open(path_scores, "wt") as f_lang:
 
         # header
         f_lang.write(header_line)
@@ -213,11 +217,11 @@ def main():
     parser.add_argument('--dir_out',
                         type=str,
                         help='where to save the results',
-                        default="local/language-scores/")
+                        default="local/")
     parser.add_argument('--lang_model',
                         type=str,
                         help='path to language model used by fasttext [lid.176.bin]',
-                        default="lid.176.bin")
+                        default="local/lid.176.bin")
     parser.add_argument('--nr_proc',
                         type=int,
                         help='how many processes to spawn [8]',
