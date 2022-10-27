@@ -18,6 +18,8 @@ You will need the German [dictionary](https://pyenchant.github.io/pyenchant/inst
 
     sudo apt install hunspell-de-de
 
+You will need the fasttext model for language classification in local/lid.176.bin.
+
 
 ## Steps for Recreating the Corpus
 
@@ -25,64 +27,56 @@ You will need the German [dictionary](https://pyenchant.github.io/pyenchant/inst
    - you need both comments and submissions (from the respective subdirectories)
    - https://files.pushshift.io/reddit
    - put them into `local/raw/comments/` and `local/raw/submissions/` respectively
+   - they have to start with "RC" and "RS" respectively
 
 2. classify comments by language
    ```
-   python3 scripts/lang-classify-comments.py
+   python3 scripts/lang-classify.py --model (raw)
    ```
-   by default, this creates two files
+   by default, this creates two files per input file
    ```
-   local/language-scores/comments/RC_{YYYY}-{MM}-lang.tsv.gz  # scores for every language
-   local/language-scores/comments/RC_{YYYY}-{MM}-de.tsv.gz    # scores for likely German comments only
+   local/languages/all/scores/R(C|S)_{YYYY}-{MM}.tsv.gz  # scores for every language
+   local/languages/de/scores/R(C|S)_{YYYY}-{MM}.tsv.gz   # scores for de
    ```
-   you can use `--lang` to modify which languages should be extracted
+   you can use `--lang` to modify which languages should be extracted.
 
-# TODO combine steps 3-5
-3. aggregate language scores (for German) monthly per thread and per subreddit
-   ```
-   Rscript scripts/prop-german-monthly.R
-   ```
-   this creates
-   ```
-   local/language-scores/comments/RC_{YYYY}-{MM}-de-per-subreddit.tsv.gz
-   local/language-scores/comments/RC_{YYYY}-{MM}-de-per-thread.tsv.gz
-   ```
 
-4. aggregate across months per thread and per subreddit
+# TODO refactor R scripts (combine, add language option)
+3. aggregate language scores (for German) monthly and globally per thread and per subreddit, filter
    ```
+   Rscript scripts/prop-german-monthly.R (local/languages/de/scores/R(C|S)_{YYYY}-{MM}.tsv.gz)
+
    Rscript scripts/prop-german-complete.R
-   ```
-   this creates
-   ```
-   local/language-scores/RC-de-per-subreddit.tsv.gz
-   ```
 
-5. filter threads based on subreddit language scores
-   ```
    Rscript scripts/prop-german-subreddit-filtered.R
    ```
    this creates
    ```
-   local/language-scores/RC-de-per-thread-subreddit-filtered.tsv.gz
+   local/languages/de/scores/R_{YYYY}-{MM}-per-subreddit.tsv.gz
+   local/languages/de/scores/R_{YYYY}-{MM}-per-thread.tsv.gz
+   
+   local/languages/de/scores-per-subreddit.tsv.gz
+   
+   local/languages/de/filtered-ids.tsv.gz
    ```
 
-6. extract submissions and comments from raw data (done separately so we can easily multiprocess)
+4. extract submissions and comments from raw data (done separately so we can easily multiprocess)
    ```
-   python3 scripts/threads-extract.py
+   python3 scripts/threads-extract.py (local/languages/de/filtered-ids.tsv.gz, raw)
    ```
    this creates
    ```
-   local/filtered-de/R(C|S)_{YYYY}-{MM}-de.ldjson.gz
+   local/languages/de/posts/R(C|S)_{YYYY}-{MM}.ldjson.gz
    ```
 
-7. collect and build XML texts and TSV table of meta data
+5. collect and build XML texts and TSV table of meta data
    ```
-   python3 scripts/threads-process.py
+   python3 scripts/threads-process.py (local/languages/de/posts/R(C|S)_{YYYY}-{MM}.ldjson.gz)
    ```
    this creates
    ```
-   local/gerede.xml.gz
-   local/gerede.tsv.gz
+   local/languages/de/gerede.xml.gz
+   local/languages/de/gerede.tsv.gz
    ```
 
 
