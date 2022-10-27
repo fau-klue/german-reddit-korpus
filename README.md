@@ -5,7 +5,13 @@ This repository contains the scripts we used to extract German submissions and c
 
 ## Dependencies
 
-Install all Python dependencies e.g. using the provided `Pipfile`. 
+Install all Python [requirements](requirements.txt); we recommend using a virtual environment:
+
+    python3 -m ven venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    
+Additionally, you will need the [fasttext model](https://fasttext.cc/docs/en/language-identification.html) for language classification. By default, the scripts assume it is located in `local/lid.176.bin`.
 
 In order to run the R scripts, you will need the following libraries:
 
@@ -14,12 +20,6 @@ In order to run the R scripts, you will need the following libraries:
     R.utils
     tidyverse
 
-You will need the German [dictionary](https://pyenchant.github.io/pyenchant/install.html#installing-a-dictionary) `hunspell-de-de` for `pyenchant`.  On Ubuntu, you can run
-
-    sudo apt install hunspell-de-de
-
-You will need the fasttext model for language classification in local/lid.176.bin.
-
 
 ## Steps for Recreating the Corpus
 
@@ -27,11 +27,11 @@ You will need the fasttext model for language classification in local/lid.176.bi
    - you need both comments and submissions (from the respective subdirectories)
    - https://files.pushshift.io/reddit
    - put them into `local/raw/comments/` and `local/raw/submissions/` respectively
-   - they have to start with "RC" and "RS" respectively
+   - they have to start with `RC` and `RS` respectively
 
 2. classify comments by language
    ```
-   python3 scripts/lang-classify.py --model (raw)
+   python3 scripts/lang-classify.py (raw)
    ```
    by default, this creates two files per input file
    ```

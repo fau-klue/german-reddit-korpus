@@ -1,0 +1,8 @@
+zstandard
+tqdm
+ujson
+fasttext
+pandas
+git+https://github.com/reddit/snudown@master#egg=snudown
+somajo
+someweta
