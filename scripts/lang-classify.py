@@ -107,12 +107,15 @@ def process_line(line):
         body = post['body']
     else:
         id = post['id']
-        link_id = id
-        parent_id = ""
+        link_id = ''
+        parent_id = ''
         body = post['title']
+        if 'selftext' in post.keys() and post['selftext'] != '':
+            body = body + "\n" + post['selftext']
 
-    subreddit = post['subreddit']
-    subreddit_id = post['subreddit_id']
+    subreddit = post.get('subreddit', "")  # some submissions don't have a subreddit
+    subreddit_id = post.get('subreddit_id', "")  # some submissions don't have a subreddit
+    is_promoted = str(post.get('promoted', ""))  # apparently all the promoted stuff
     created_utc = str(post['created_utc'])
 
     # sanitise text
@@ -143,6 +146,7 @@ def process_line(line):
         created_utc,
         subreddit,
         subreddit_id,
+        is_promoted,
         length,
         label,
         confidence
@@ -171,6 +175,7 @@ def process_file(path_in):
         'created_utc',
         'subreddit',
         'subreddit_id',
+        'is_promoted',
         'length',
         'language',
         'confidence'
@@ -212,15 +217,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--inputglob',
                         type=str,
-                        help='glob to input files',
+                        help='glob to input files [local/raw/*/R*]',
                         default="local/raw/*/R*")
     parser.add_argument('--dir_out',
                         type=str,
-                        help='where to save the results',
+                        help='where to save the results [local/]',
                         default="local/")
     parser.add_argument('--lang_model',
                         type=str,
-                        help='path to language model used by fasttext [lid.176.bin]',
+                        help='path to language model used by fasttext [local/lid.176.bin]',
                         default="local/lid.176.bin")
     parser.add_argument('--nr_proc',
                         type=int,
@@ -233,7 +238,7 @@ def main():
     args = parser.parse_args()
 
     # glob input paths
-    paths_in = glob(args.inputglob)
+    paths_in = sorted(glob(args.inputglob))
 
     # output
     global DIR_OUT

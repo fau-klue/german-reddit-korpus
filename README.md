@@ -19,6 +19,7 @@ In order to run the R scripts, you will need the following libraries:
     data.table
     R.utils
     tidyverse
+    tidytable
 
 
 ## Steps for Recreating the Corpus
