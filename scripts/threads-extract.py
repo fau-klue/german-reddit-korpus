@@ -11,7 +11,7 @@ from utils import path2lines, multi_proc
 
 
 def extract_threads(path_in):
-    """ uses global link_ids and global field """
+    """ uses global link_ids """
 
     drive, tail = os.path.split(path_in)
     path_out = os.path.join(DIR_OUT, tail.split(".")[0] + "-de.ldjson.gz")
