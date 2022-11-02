@@ -4,6 +4,7 @@
 import bz2
 import errno
 import gzip
+import io
 import lzma
 import os
 from multiprocessing import Pool
@@ -136,20 +137,10 @@ def path2lines(path_in):
     elif compression == 'zst':
         with open(path_in, 'rb') as fh:
             dctx = zstd.ZstdDecompressor(max_window_size=2147483648)
-            with dctx.stream_reader(fh) as reader:
-                previous_line = ""
-                while True:
-                    chunk = reader.read(2**24)
-                    if not chunk:
-                        break
-
-                    string_data = chunk.decode('utf-8')
-                    lines = string_data.split("\n")
-                    for i, line in enumerate(lines[:-1]):
-                        if i == 0:
-                            line = previous_line + line
-                        yield line
-                        previous_line = lines[-1]
+            stream_reader = dctx.stream_reader(fh)
+            text_stream = io.TextIOWrapper(stream_reader, encoding='utf-8')
+            for line in text_stream:
+                yield line
 
     else:
         raise ValueError('compression type not supported')
