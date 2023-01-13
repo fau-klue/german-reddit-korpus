@@ -181,7 +181,7 @@ def process_file(path_in):
     header_line = "\t".join([
         'link_id',         # thread
         'id',              # comment or submission id
-        'parent_id',       # actual parent (submission or comment, None of submission)
+        'parent_id',       # actual parent (submission or comment, None if submission)
         'created_utc',
         'subreddit',
         'subreddit_id',
@@ -217,7 +217,7 @@ def main():
     parser.add_argument('--inputglob',
                         type=str,
                         help='glob to input files [local/raw/*/R*]',
-                        default="local/raw/*/RS*")
+                        default="local/raw/*/R*")
     parser.add_argument('--dir_out',
                         type=str,
                         help='where to save the results [local/]',

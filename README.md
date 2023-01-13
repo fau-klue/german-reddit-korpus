@@ -1,7 +1,7 @@
 # GeRedE: A Corpus of German Reddit Exchanges
-GeRedE is a xxx million token German CMC corpus containing approximately xxx submissions and xxx comments posted on [Reddit](https://www.reddit.com) between 2010 and mid-2021. Reddit is a popular online platform combining social news aggregation, discussion and micro-blogging. The CWB-indexed version of our final corpus is available to registered academic users via [CQPweb](https://corpora.linguistik.uni-erlangen.de/cqpweb/gerede_v2).
+GeRedE is a xxx million token German CMC corpus containing approximately xxx submissions and xxx comments posted on [Reddit](https://www.reddit.com) between 2005 and 2022.  (Reddit is a popular online platform combining social news aggregation, discussion and micro-blogging.)  The CWB-indexed version of our final corpus is available to registered academic users via [CQPweb](https://corpora.linguistik.uni-erlangen.de/cqpweb/gerede_v2).
 
-This repository contains the scripts we used to extract German submissions and comments from the vast amount of data Jason Baumgartner provides at https://files.pushshift.io/reddit. It also contains the IDs of all submissions and comments included in our corpus, so that those who wish to recreate our corpus are not required to run all processing steps by themselves.
+This repository contains the scripts we used to extract German submissions and comments from the vast amount of data Jason Baumgartner provides at https://files.pushshift.io/reddit.  It also contains the IDs of all submissions and comments included in our corpus, so that those who wish to recreate our corpus are not required to run all processing steps by themselves, but can just extract the threads that we identified as German from the raw data.
 
 ## Dependencies
 
@@ -11,7 +11,7 @@ Install all Python [requirements](requirements.txt); we recommend using a virtua
     source venv/bin/activate
     pip install -r requirements.txt
     
-Additionally, you will need the [fasttext model](https://fasttext.cc/docs/en/language-identification.html) for language classification. By default, the scripts assume it is located in `local/lid.176.bin`.
+Additionally, you will need the [fasttext model](https://fasttext.cc/docs/en/language-identification.html) for language classification.  By default, the scripts assume it is located in `local/lid.176.bin`.
 
 In order to run the R scripts, you will need the following libraries:
 
@@ -32,19 +32,16 @@ In order to run the R scripts, you will need the following libraries:
 
 2. classify comments by language
    ```
-   python3 scripts/lang-classify.py (raw)
+   python3 scripts/lang-classify.py
    ```
-   by default, this creates two files per input file
+   this creates one file per input file
    ```
-   local/languages/all/scores/R(C|S)_{YYYY}-{MM}.tsv.gz  # scores for every language
-   local/languages/de/scores/R(C|S)_{YYYY}-{MM}.tsv.gz   # scores for de
+   local/languages/all/scores/R(C|S)_{YYYY}-{MM}.tsv.gz
    ```
-   you can use `--lang` to modify which languages should be extracted.
 
-
-# TODO refactor R scripts (combine, add language option)
 3. aggregate language scores (for German) monthly and globally per thread and per subreddit, filter
-   ```
+   **TODO** refactor R scripts (combine, add language option)
+    ```
    Rscript scripts/prop-german-monthly.R (local/languages/de/scores/R(C|S)_{YYYY}-{MM}.tsv.gz)
 
    Rscript scripts/prop-german-complete.R
