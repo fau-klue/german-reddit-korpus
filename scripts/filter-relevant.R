@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Philipp Heinrich & Andreas Blombach, 2022
+# Philipp Heinrich & Andreas Blombach, 2023
 
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(tidyverse))
@@ -62,7 +62,7 @@ aggregate_stats <- function(path_in, dir_out, language){
   d <- d |>
     arrange.(created_utc) |>
     summarise.(subreddit = last(subreddit), # a few comments belong to the same thread, but to different subreddits; apparently, this can happen when a thread is moved to another subreddit after the first comments have already been collected by pushshift
-               confidence = weighted.mean(confidence, length),
+               confidence = weighted.mean(confidence, log(length)),
                length = sum(length),
                n = n(),
                .by = link_id)
@@ -72,13 +72,14 @@ aggregate_stats <- function(path_in, dir_out, language){
   
   cat("- summarizing subreddits\n")
   d |> 
-    summarise.(confidence = weighted.mean(confidence, length),
+    summarise.(confidence = weighted.mean(confidence, log(length)),
                length = sum(length),
                n = n(),
                .by = subreddit) |>
     write_tsv(path_subreddit)
 
   cat(str_dup("=", 80), "\n")
+  gc()
 }
 
 
@@ -129,9 +130,9 @@ if (file.exists(subreddits_out) & !args$overwrite) {
   stop(subreddits_out, " already exists. Use '-o' to overwrite existing files.")
 }
 
-sr <- read_tsv(paths2, show_col_types = F)
+sr <- read_tsv(paths2, show_col_types = FALSE)
 sr <- sr |> 
-  summarise.(confidence = weighted.mean(confidence, length),
+  summarise.(confidence = weighted.mean(confidence, log(length)),
              length = sum(length),
              n = sum(n),
              .by = subreddit)
@@ -140,7 +141,7 @@ sr |> write_tsv(subreddits_out)
 
 
 # Step 3: read all the thread files individually, filter out threads in
-# irrelevant subreddits, then combine to a single tidytable
+# irrelevant subreddits, then combine into a single tidytable
 paths3 <- list.files(args$dir_out,
                      pattern = str_c("-", args$lang, "-per-thread\\.tsv\\.gz$"),
                      full.names = TRUE)
@@ -154,13 +155,13 @@ if (file.exists(threads_out) & !args$overwrite) {
 }
 
 relevant_sr <- sr |>
-  filter.(length >= 100, confidence > (exp(-sqrt(n)/4) + .1)) |> # TODO: check if this works well
+  filter.(length >= 100, confidence > (exp(-sqrt(n)/4) + .015)) |> # 1.5 % is the old threshold from our paper
   pull(subreddit)
 cat("- keeping threads from", length(relevant_sr), "different subreddits\n")
 
 threads <- tibble()
 for (p in paths3) {
-  tmp <- fread.(p) |>
+  tmp <- fread(p) |>
     filter.(subreddit %chin% relevant_sr)
     cat("- number of potentially relevant threads in ", p, ": ", nrow(tmp), "\n", sep = "")
     threads <- threads |> bind_rows.(tmp)
@@ -168,10 +169,10 @@ for (p in paths3) {
 
 cat("- summarising and writing output to", threads_out, "\n")
 threads |>
-  summarise.(confidence = weighted.mean(confidence, length),
+  summarise.(confidence = weighted.mean(confidence, log(length)),
              length = sum(length),
              n = sum(n),
-             .by = c(subreddit, link_id)) |> # TODO: check if there are still threads with the same link_id in different subreddits
+             .by = c(subreddit, link_id)) |> # link_ids now appear to be unique
   arrange.(desc.(confidence)) |>
   write_tsv(threads_out)
 
