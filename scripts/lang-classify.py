@@ -98,8 +98,14 @@ from utils import multi_proc, path2lines
 
 def process_line(line):
 
+    try:
+        post = ujson.loads(line.strip())
+    except ujson.JSONDecodeError:
+        return 'error', "JSONDecodeError"
+    except UnicodeDecodeError:
+        return 'error', "UnicodeDecodeError"
+
     # comments have link_ids
-    post = ujson.loads(line.strip())
     if 'link_id' in post.keys():
         id = post['id']
         link_id = post['link_id']
@@ -113,10 +119,16 @@ def process_line(line):
         if 'selftext' in post.keys() and post['selftext'] != '':
             body = body + "\n" + post['selftext']
 
-    subreddit = post.get('subreddit', "")  # some submissions don't have a subreddit
-    subreddit_id = post.get('subreddit_id', "")  # some submissions don't have a subreddit
-    is_promoted = str(post.get('promoted', ""))  # apparently all the promoted stuff
     created_utc = str(post['created_utc'])
+
+    # some submissions don't have a subreddit
+    # starting 2017, they have a subreddit_id field set to 'null'
+    subreddit = post.get('subreddit', "")
+    subreddit = subreddit if subreddit else ""
+    subreddit_id = post.get('subreddit_id', "")
+    subreddit_id = subreddit_id if subreddit_id else ""
+    # apparently all the promoted stuff
+    is_promoted = str(post.get('promoted', ""))
 
     # sanitise text
     if re.search(r"&amp;#x", body):   # fix weird hex-encoding
@@ -157,8 +169,6 @@ def process_line(line):
 
 def process_file(path_in):
 
-    languages = LANGUAGES
-
     # identify compression
     compression = path_in.split(".")[-1]
 
@@ -171,7 +181,7 @@ def process_file(path_in):
     header_line = "\t".join([
         'link_id',         # thread
         'id',              # comment or submission id
-        'parent_id',       # actual parent (submission or comment, None of submission)
+        'parent_id',       # actual parent (submission or comment, None if submission)
         'created_utc',
         'subreddit',
         'subreddit_id',
@@ -181,34 +191,23 @@ def process_file(path_in):
         'confidence'
     ]) + "\n"
 
-    # open files for each language
-    files_languages = dict()
-    for lang in languages:
-        tail_lang = tail.replace("." + compression, ".tsv.gz")
-        drive_lang = os.path.join(DIR_OUT, "languages", lang, "scores")
-        os.makedirs(drive_lang, exist_ok=True)
-        files_languages[lang] = gzip.open(os.path.join(drive_lang, tail_lang), "wt")
-
     # loop through lines
     with gzip.open(path_scores, "wt") as f_lang:
 
         # header
         f_lang.write(header_line)
-        for lang in languages:
-            files_languages[lang].write(header_line)
 
         # classify
         for line in path2lines(path_in):
 
             label, data_line = process_line(line)
+
+            if label == 'error':
+                print(f"error in {path_in}: {data_line}")
+                print(line)
+                continue
+
             f_lang.write(data_line)
-
-            for lang in languages:
-                if label == f'__label__{lang}':
-                    files_languages[lang].write(data_line)
-
-    for lang in languages:
-        files_languages[lang].close()
 
 
 def main():
@@ -229,12 +228,8 @@ def main():
                         default="local/lid.176.bin")
     parser.add_argument('--nr_proc',
                         type=int,
-                        help='how many processes to spawn [8]',
-                        default=8)
-    parser.add_argument('--lang',
-                        type=str,
-                        nargs='+',
-                        default=['de'])
+                        help='how many processes to spawn [12]',
+                        default=12)
     args = parser.parse_args()
 
     # glob input paths
@@ -245,17 +240,16 @@ def main():
     DIR_OUT = args.dir_out
     os.makedirs(DIR_OUT, exist_ok=True)
 
-    # languages
-    global LANGUAGES
-    LANGUAGES = args.lang
-
     # load language model
     path_model = args.lang_model
     global MODEL
     MODEL = fasttext.load_model(path_model)
 
     # process files
-    multi_proc(process_file, paths_in, nr_cpus=args.nr_proc)
+    if len(paths_in) == 1:
+        process_file(paths_in[0])
+    else:
+        multi_proc(process_file, paths_in, nr_cpus=args.nr_proc)
 
 
 if __name__ == "__main__":
