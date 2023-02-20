@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Philipp Heinrich & Andreas Blombach, 2023
+# Andreas Blombach & Philipp Heinrich, 2023
 
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(tidyverse))
@@ -22,15 +22,13 @@ parser$add_argument("-o", "--overwrite",
                     default = FALSE)
 parser$add_argument("-s", "--skip1",
                     action = "store_true",
-                    help = "skip first step (if output files already exist)",
+                    help = "skip first step (if output files for individual months already exist)",
                     default = FALSE)
 args <- parser$parse_args()
 
 aggregate_stats <- function(path_in, dir_out, language){
 
   # paths to save results to
-  # TODO: da glob_in angepasst werden kann, kann man sich hier nicht unbedingt
-  # darauf verlassen, dass die Dateien so enden
   file_name <- basename(path_in)
   path_out <- file.path(dir_out, file_name)
   path_subreddit <- str_replace(path_out, ".tsv.gz", str_c("-", language, "-per-subreddit.tsv.gz"))
@@ -56,13 +54,13 @@ aggregate_stats <- function(path_in, dir_out, language){
               select = c("link_id", "id", "created_utc", "subreddit", "language", "confidence", "length")) |>
     mutate.(link_id = ifelse.(is.na(link_id), str_c("t3_", id), link_id)) |> # for submissions
     drop_na.() |> 
-    mutate.(confidence = ifelse.(language == label, confidence, 0))
+    mutate.(confidence = ifelse.(length == 0, NA, ifelse.(language == label, confidence, 0)))
 
-  cat("- summarizing threads\n")
+  cat("- summarising threads\n")
   d <- d |>
     arrange.(created_utc) |>
     summarise.(subreddit = last(subreddit), # a few comments belong to the same thread, but to different subreddits; apparently, this can happen when a thread is moved to another subreddit after the first comments have already been collected by pushshift
-               confidence = weighted.mean(confidence, log(length)),
+               confidence = weighted.mean(confidence, log(length), na.rm = TRUE), # log(length), otherwise individual very long posts can have undue influence
                length = sum(length),
                n = n(),
                .by = link_id)
@@ -70,9 +68,9 @@ aggregate_stats <- function(path_in, dir_out, language){
   d |>
     write_tsv(path_thread)
   
-  cat("- summarizing subreddits\n")
+  cat("- summarising subreddits\n")
   d |> 
-    summarise.(confidence = weighted.mean(confidence, log(length)),
+    summarise.(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
                length = sum(length),
                n = n(),
                .by = subreddit) |>
@@ -88,7 +86,11 @@ iso_codes <- iso_codes_str |>
   str_split(" ") |>
   unlist()
 if (!args$lang %chin% iso_codes) {
-  stop(args$lang, " is not in the list of supported languages. Use one of the following:\n", iso_codes_str)
+  stop("'", args$lang, "' is not in the list of supported languages. Use one of the following:\n", iso_codes_str)
+}
+
+if (!str_detect(args$glob_in, "\\.tsv\\.gz$")) {
+  stop("The glob pattern ", args$glob_in , " for the input file(s) needs to end in '.tsv.gz'. If you need to know more about glob patterns, please see https://en.wikipedia.org/wiki/Glob_(programming).")
 }
 
 if (!dir.exists(args$dir_out)) {
@@ -123,7 +125,7 @@ paths2 <- list.files(args$dir_out,
                      full.names = TRUE)
 subreddits_out <- file.path(args$dir_out, str_c("posts-", args$lang,"-by-subreddit.tsv.gz"))
 cat(str_dup("=", 80), "\n")
-cat("Step 2: reading", length(paths2), "files and creating a single file containing statistics for all subreddits.\n")
+cat("Step 2: reading", length(paths2), "files and creating a single file containing statistics for all subreddits/profile pages.\n")
 cat(str_dup("=", 80), "\n")
 
 if (file.exists(subreddits_out) & !args$overwrite) {
@@ -132,10 +134,11 @@ if (file.exists(subreddits_out) & !args$overwrite) {
 
 sr <- read_tsv(paths2, show_col_types = FALSE)
 sr <- sr |> 
-  summarise.(confidence = weighted.mean(confidence, log(length)),
+  summarise.(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
              length = sum(length),
              n = sum(n),
              .by = subreddit)
+cat("- found ", sum(sr$n), " comments in ", nrow(sr)," different subreddits/profile pages.\n")
 cat("- writing output to", subreddits_out, "\n")
 sr |> write_tsv(subreddits_out)
 
@@ -157,7 +160,7 @@ if (file.exists(threads_out) & !args$overwrite) {
 relevant_sr <- sr |>
   filter.(length >= 100, confidence > (exp(-sqrt(n)/4) + .015)) |> # 1.5 % is the old threshold from our paper
   pull(subreddit)
-cat("- keeping threads from", length(relevant_sr), "different subreddits\n")
+cat("- keeping threads from", length(relevant_sr), "different subreddits -- for now\n")
 
 threads <- tibble()
 for (p in paths3) {
@@ -167,14 +170,36 @@ for (p in paths3) {
     threads <- threads |> bind_rows.(tmp)
 }
 
-cat("- summarising and writing output to", threads_out, "\n")
-threads |>
-  summarise.(confidence = weighted.mean(confidence, log(length)),
+cat("- summarising, filtering and writing output to", threads_out, "\n")
+threads <- threads |>
+  summarise.(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
              length = sum(length),
              n = sum(n),
              .by = c(subreddit, link_id)) |> # link_ids now appear to be unique
-  arrange.(desc.(confidence)) |>
+  left_join.(sr |> select.(subreddit, sr_confidence = confidence)) |>
+  mutate.(score = confidence * sr_confidence) |>
+  filter.(confidence >= .5 & # weighted thread confidence >= 0.5
+            score >= .01 & # for subreddits with very low confidence, consider only high confidence threads
+            length >= 25 & # only threads containing at least 25 characters
+            # at least 2 comments in thread or,
+            # if not a profile page, at least 1 comments or
+            # at least 150 characters in a subreddit with a weighted confidence of at least 0.1:
+            (n >= 3 | (!str_detect(subreddit, "^u_") & (n >= 2 | (length >= 150 & sr_confidence >= .1)))) &
+            # filter out certain annoying subreddits (language-specific!):
+            !subreddit %chin% c("removalbot", "newstweetfeed", "TheLetterH",
+                                "subreddit_simulacrum", "GoodDuckPanels")) |>
+  mutate.(threads = n(), .by = subreddit) |>
+  # after applying all filters above, keep only subreddits with at least 10 threads:
+  filter.(threads >= 10) |>
+  arrange.(desc.(threads))
+
+threads |>
   write_tsv(threads_out)
+
+stats <- threads |>
+  summarise.(posts = sum(n), threads = n(), .by = subreddit)
+
+cat("- kept ", nrow(threads), " threads from ", nrow(stats)," different subreddits, containing ", sum(stats$posts)," posts in total\n")
 
 cat(str_dup("=", 80), "\n")
 cat("All done!\n")
