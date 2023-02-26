@@ -48,19 +48,18 @@ In order to run the R scripts, you will need the following libraries:
 
    Rscript scripts/prop-german-subreddit-filtered.R
    ```
+   **END OF TODO**
    this creates
    ```
-   local/languages/de/scores/R_{YYYY}-{MM}-per-subreddit.tsv.gz
-   local/languages/de/scores/R_{YYYY}-{MM}-per-thread.tsv.gz
-   
-   local/languages/de/scores-per-subreddit.tsv.gz
-   
-   local/languages/de/filtered-ids.tsv.gz
+   local/languages/de/R[CS]_{YYYY}-{MM}-de-per-subreddit.tsv.gz
+   local/languages/de/R[CS]_{YYYY}-{MM}-de-per-thread.tsv.gz
+   local/languages/de/posts-de-by-subreddit.tsv.gz
+   local/languages/de/posts-de-by-thread.tsv.gz
    ```
 
 4. extract submissions and comments from raw data (done separately so we can easily multiprocess)
    ```
-   python3 scripts/threads-extract.py (local/languages/de/filtered-ids.tsv.gz, raw)
+   python3 scripts/threads-extract.py
    ```
    this creates
    ```
