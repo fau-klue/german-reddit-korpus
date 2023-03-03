@@ -18,9 +18,9 @@ def main(path_in, path_out):
             for text, meta_text in iter_s(thread):
                 if date is None:
                     date = meta_text['date']
-                    thread_s += dict2meta(meta_text, level='post')
-                    thread_s += "\n".join(text) + "\n"
-                    thread_s += '</post>\n'
+                thread_s += dict2meta(meta_text, level='post')
+                thread_s += "\n".join(text) + "\n"
+                thread_s += '</post>\n'
 
             meta_thread['date'] = date
             meta_thread['year'] = "y" + date[:4]
