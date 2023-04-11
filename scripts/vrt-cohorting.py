@@ -21,8 +21,8 @@ def main(path_in, path_out):
                     date = meta_text.get('date', None)
                 if permalink is None:
                     permalink = meta_text.pop('permalink', None)
-                    if len(permalink) > 100:
-                        permalink = None
+                else:
+                    meta_text.pop('permalink', None)
                 thread_s += dict2meta(meta_text, level='post')
                 thread_s += "\n".join(text) + "\n"
                 thread_s += '</post>\n'
@@ -30,7 +30,7 @@ def main(path_in, path_out):
             meta_thread['date'] = date
             meta_thread['year'] = "y" + date[:4]
             meta_thread['month'] = "m" + date[:7].replace("-", "_")
-            meta_thread['permalink'] = permalink
+            meta_thread['permalink'] = None if len(permalink) > 100 else permalink
 
             thread_s = dict2meta(meta_thread) + thread_s + "</text>\n"
 

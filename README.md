@@ -63,18 +63,31 @@ In order to run the R scripts, you will need the following libraries:
    ```
    this creates
    ```
-   local/languages/de/posts/R(C|S)_{YYYY}-{MM}.ldjson.gz
+   local/languages/de-posts/R[CS]_{YYYY}-{MM}.ldjson.gz
    ```
 
 5. collect and build XML texts and TSV table of meta data
    ```
-   python3 scripts/threads-process.py (local/languages/de/posts/R(C|S)_{YYYY}-{MM}.ldjson.gz)
+   python3 scripts/threads-process.py
    ```
    this creates
    ```
-   local/languages/de/gerede.xml.gz
-   local/languages/de/gerede.tsv.gz
+   local/languages/de-gerede.xml.gz
+   local/languages/de-gerede.tsv.gz
    ```
+   Note that this needs a couple hundred gigabytes of RAM.
+   
+6. annotation with SoMaJo + SoMeWeTa:
+   ```
+   somajo-tokenizer --xml --split_sentences --sentence-tag s --tag p --parallel 20 local/languages/de-gerede.xml | somewe-tagger --xml --sentence-tag s --parallel 20 --tag local/german_newspaper_2020-05-28.model - > local/languages/de-gerede.vrt
+   ```
+        
+7. cohorting for CQPweb
+   **TODO** `threads-process.py` should already create an XML file compatible with CQPweb
+   ```
+   python3 scripts/vrt-cohorting.py
+   ```
+   also, this needs my private `cwb-vrt` suite
 
 
 ## References
