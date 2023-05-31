@@ -40,21 +40,26 @@ In order to run the R scripts, you will need the following libraries:
    ```
 
 3. aggregate language scores (for German) monthly and globally per thread and per subreddit, filter
-   **TODO** refactor R scripts (combine, add language option)
+   
     ```
-   Rscript scripts/prop-german-monthly.R (local/languages/de/scores/R(C|S)_{YYYY}-{MM}.tsv.gz)
-
-   Rscript scripts/prop-german-complete.R
-
-   Rscript scripts/prop-german-subreddit-filtered.R
+   Rscript scripts/filter-relevant.R
    ```
-   **END OF TODO**
-   this creates
+   parameters:
+   - to change the input path (default `local/language-scores/comments/*.tsv.gz`):
+     `--glob_in path/*.tsv.gz`
+   - to change the output directory (default `local/language-scores/aggregated`):
+     `--dir_out some/path`
+   - to change the language of the posts you're interested in, use the corresponding ISO 639-1 code (default `de`, i.e. German)
+     `--lang en`
+   - to overwrite existing files in the output directory, use the flag `-o` (by default, the program won't overwrite files, so you can restart it and continue the process without losing data if it runs out of memory)
+   - if you only want to redo the filtering process after the files for individual months have already been created, you can skip this first step using the flag `-s` (probably together with `-o`)
+
+   by default, this creates
    ```
-   local/languages/de/R[CS]_{YYYY}-{MM}-de-per-subreddit.tsv.gz
-   local/languages/de/R[CS]_{YYYY}-{MM}-de-per-thread.tsv.gz
-   local/languages/de/posts-de-by-subreddit.tsv.gz
-   local/languages/de/posts-de-by-thread.tsv.gz
+   local/language-scores/de/R[CS]_{YYYY}-{MM}-de-per-subreddit.tsv.gz
+   local/language-scores/de/R[CS]_{YYYY}-{MM}-de-per-thread.tsv.gz
+   local/language-scores/de/posts-de-by-subreddit.tsv.gz (not strictly needed, but nice for analysis)
+   local/language-scores/de/posts-de-by-thread.tsv.gz
    ```
 
 4. extract submissions and comments from raw data (done separately so we can easily multiprocess)
