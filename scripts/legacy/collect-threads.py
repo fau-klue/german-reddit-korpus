@@ -5,15 +5,13 @@ import argparse
 import gzip
 import ujson
 import os
-from pandas import DataFrame
 from collections import defaultdict
 from glob import glob
-from utils_markdown import process_thread
 
 
 def sort_threads(paths_in, path_out):
-    
-    # NB: I don't make no distinction between submissions and comments
+
+    # NB: implementation doesn't make a distinction between submissions and comments
     # I hope that submissions are created consistently before comments
 
     print("collecting threads")
