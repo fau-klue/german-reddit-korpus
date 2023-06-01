@@ -28,7 +28,7 @@ In order to run the R script (step 3), you will need the following libraries:
     
 For POS annotation (see step 7), you will need the German Web and Social Media [model](https://corpora.linguistik.uni-erlangen.de/someweta/german_web_social_media_2020-05-28.model) of [SoMeWeTa](https://github.com/tsproisl/SoMeWeTa).  By default, the scripts assume it is located at `local/german_web_social_media_2020-05-28.model`.
 
-## Preparation ##
+## Language Classification ##
 
 1. download the raw data from [pushshift](https://files.pushshift.io/reddit)
    - you need both comments and submissions (from the respective subdirectories)
