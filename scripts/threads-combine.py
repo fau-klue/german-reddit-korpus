@@ -11,7 +11,8 @@ from glob import glob
 from utils_markdown import process_thread
 
 
-def process_threads(paths_in, path_xml, path_meta):
+def sort_threads(paths_in, path_out):
+    
     # NB: I don't make no distinction between submissions and comments
     # I hope that submissions are created consistently before comments
 
@@ -55,23 +56,12 @@ def process_threads(paths_in, path_xml, path_meta):
     # sort globally by submission creation
     id2time = sorted(id2time, key=lambda d: int(d[1]))
 
-    print("writing xml and collecting meta data")
-    meta_records = list()
-    with gzip.open(path_xml, mode="wt") as f_out:
-
-        f_out.write("<corpus>\n")
+    print("writing")
+    with gzip.open(path_out, "wt") as f_out:
         for c, (idx, time) in enumerate(id2time):
             print(f'thread {c+1}/{len(id2time)}', end="\r")
-            xml_str, meta = process_thread(threads[idx])
-            meta_records.extend(meta)
-            f_out.write(xml_str)
+            f_out.write(ujson.dumps(threads[idx]) + "\n")
         print()
-        f_out.write("</corpus>\n")
-
-    print("saving meta data")
-    # save meta data separately as data frame
-    meta_data = DataFrame(meta_records)
-    meta_data.to_csv(path_meta, compression="gzip", encoding="utf-8", sep="\t", index=False)
 
 
 if __name__ == '__main__':
@@ -81,15 +71,9 @@ if __name__ == '__main__':
                         type=str,
                         help='glob to dumps of comments and submissions',
                         default="local/languages/de-posts/*ldjson.gz")
-    parser.add_argument('--path_xml',
+    parser.add_argument('--path_out',
                         type=str,
-                        help="path to save texts",
-                        default="local/languages/de-gerede.xml.gz")
-    parser.add_argument('--path_tsv',
-                        type=str,
-                        help="path to save meta data",
-                        default="local/languages/de-gerede.tsv.gz")
-
+                        help="path to save threads",
+                        default="local/languages/de-gerede.ldjson.gz")
     args = parser.parse_args()
-
-    process_threads(sorted(glob(args.glob_in)), args.path_xml, args.path_tsv)
+    threads_dict = sort_threads(sorted(glob(args.glob_in)), args.path_out)
