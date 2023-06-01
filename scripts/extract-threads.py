@@ -108,10 +108,10 @@ if __name__ == '__main__':
                         type=str,
                         help="where to save threads",
                         default="local/languages/de/gerede.ldjson.gz")
-    parser.add_argument('--dir_monthly',
+    parser.add_argument('--dir_out',
                         type=str,
                         help="where to save monthly files",
-                        default="local/languages/de/ldjson/")
+                        default="local/languages/de/monthly/")
     parser.add_argument('--nr_proc',
                         type=int,
                         default=12,
@@ -123,12 +123,12 @@ if __name__ == '__main__':
     os.makedirs(DIR_OUT, exist_ok=True)
 
     print("getting relevant link-ids")
-    df = read_csv(args.path_link_ids, sep="\t", dtype=str)
+    df = read_csv(args.path_ids, sep="\t", dtype=str)
     global link_ids
     link_ids = set([idx.split("_")[-1] for idx in df['link_id']])
 
     print("looping through raw files")
-    paths_raw = sorted(glob(args.glob_raw))
+    paths_raw = sorted(glob(args.glob_in))
     paths_raw = [p for p in paths_raw if len(p.split("/")[-1].split(".")[0]) == 10]
     multi_proc(extract_threads, paths_raw, args.nr_proc)
 

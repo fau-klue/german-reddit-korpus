@@ -233,7 +233,7 @@ def main():
     args = parser.parse_args()
 
     # glob input paths
-    paths_in = sorted(glob(args.inputglob))
+    paths_in = sorted(glob(args.glob_in))
 
     # output
     global DIR_OUT
@@ -241,7 +241,7 @@ def main():
     os.makedirs(DIR_OUT, exist_ok=True)
 
     # load language model
-    path_model = args.lang_model
+    path_model = args.model
     global MODEL
     MODEL = fasttext.load_model(path_model)
 

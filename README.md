@@ -8,11 +8,11 @@
 The repository at hand contains the scripts we used to extract German threads from the vast amount of data Jason Baumgartner provides at [pushshift](https://files.pushshift.io/reddit) and to convert them into XML/VRT (which is the input format for CWB/CQPweb).
 
 
-## Dependencies ##
+## Dependencies and Resources ##
 
 Install all python3 [requirements](requirements.txt); we recommend using a virtual environment:
 
-    python3 -m ven venv
+    python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
 
@@ -27,9 +27,6 @@ In order to run the R script (step 3), you will need the following libraries:
     tidytable
     
 For POS annotation (see step 7), you will need the German Web and Social Media [model](https://corpora.linguistik.uni-erlangen.de/someweta/german_web_social_media_2020-05-28.model) of [SoMeWeTa](https://github.com/tsproisl/SoMeWeTa).  By default, the scripts assume it is located at `local/german_web_social_media_2020-05-28.model`.
-
-
-## Steps for recreating the corpus ##
 
 ## Preparation ##
 
@@ -52,7 +49,7 @@ For POS annotation (see step 7), you will need the German Web and Social Media [
    - to change the input paths:
      `--glob_in "local/raw/*/R*"`
    - to change the output directory:
-     `--dir_out "local/languages/scores/all/"`
+     `--dir_out "local/languages/scores/"`
    - to change the path to the language model:
      `--model "local/lid.176.bin"`
    - to change the number of process to spawn:
@@ -66,8 +63,8 @@ For POS annotation (see step 7), you will need the German Web and Social Media [
    ```
    this creates monthly aggregates
    ```
-   local/languages/de/scores/R[CS]_{YYYY}-{MM}-by-subreddit.tsv.gz
-   local/languages/de/scores/R[CS]_{YYYY}-{MM}-by-thread.tsv.gz
+   local/languages/de/monthly/R[CS]_{YYYY}-{MM}-by-subreddit.tsv.gz
+   local/languages/de/monthly/R[CS]_{YYYY}-{MM}-by-thread.tsv.gz
    ```
    as well as global scores
    ```
@@ -75,13 +72,13 @@ For POS annotation (see step 7), you will need the German Web and Social Media [
    local/languages/de/scores-by-thread.tsv.gz     # used for filtering out threads
    ```
 
-   arguments:
+   script arguments:
    - to change the language of the posts to filter out, use the corresponding ISO 639-1 code:
      `--lang "de"`
    - to change the input paths:
-     `--glob_in "local/languages/scores/*.tsv.gz"`
+     `--glob_in "local/languages/monthly/*.tsv.gz"`
    - to change the output directory:
-     `--dir_out "local/languages/de/scores/"`
+     `--dir_out "local/languages/de/monthly/"`
    - to overwrite existing files in the output directory, use the flag `-o` (by default, the program won't overwrite files, so you can restart it and continue the process without losing data if it runs out of memory)
    - if you only want to redo the filtering process after the files for individual months have already been created, you can skip this first step using the flag `-s` (probably together with `-o`)
 
@@ -91,7 +88,7 @@ For POS annotation (see step 7), you will need the German Web and Social Media [
    ```
    this creates a file for each month
    ```
-   local/languages/de/ldjson/R[CS]_{YYYY}-{MM}.ldjson.gz
+   local/languages/de/monthly/R[CS]_{YYYY}-{MM}.ldjson.gz
    ```
    and a final file
    ```
@@ -99,7 +96,7 @@ For POS annotation (see step 7), you will need the German Web and Social Media [
    ```
    which comprises all threads classified as German.
    
-   arguments:
+   script arguments:
    - to change the paths to raw data:
      `--glob_raw "local/raw/*/R*"`
    - to change the path to relevant thread IDs:
@@ -107,7 +104,7 @@ For POS annotation (see step 7), you will need the German Web and Social Media [
    - to change the output path:
      `--path_out "local/languages/de/gerede.ldjson.gz"`
    - to change the output directory for monthly data:
-     `--dir_monthly "local/languages/de/ldjson/"`
+     `--dir_out "local/languages/de/monthly/"`
    - to change the number of process to spawn:
      `--nr_proc 12`
 
@@ -133,7 +130,7 @@ For POS annotation (see step 7), you will need the German Web and Social Media [
    
 6. tokenise and pos-tag with SoMaJo + SoMeWeTa (on unzipped data):
    ```
-   somajo-tokenizer --xml --split_sentences --sentence-tag s --tag p --parallel 12 local/languages/de/gerede.xml | somewe-tagger --xml --sentence-tag s --parallel 12 --tag local/german_newspaper_2020-05-28.model - > local/languages/de-gerede.vrt
+   somajo-tokenizer --xml --split_sentences --sentence-tag s --tag p --parallel 12 local/languages/de/gerede.xml | somewe-tagger --xml --sentence-tag s --parallel 12 --tag local/german_web_social_media_2020-05-28.model - > local/languages/de/gerede.vrt
    ```
 
 

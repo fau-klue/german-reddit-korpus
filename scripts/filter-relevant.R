@@ -12,7 +12,7 @@ parser$add_argument("--glob_in",
                     default = "local/languages/scores/*.tsv.gz")
 parser$add_argument("--dir_out",
                     help = "directory in which to store output files",
-                    default = "local/languages/de/scores/")
+                    default = "local/languages/de/")
 parser$add_argument("--lang",
                     help = "ISO 639-1 code of the language you're interested in",
                     default = "de")
@@ -26,16 +26,16 @@ parser$add_argument("-s", "--skip1",
                     default = FALSE)
 args <- parser$parse_args()
 
-aggregate_stats <- function(path_in, dir_out, language){
+aggregate_stats <- function(path_in, dir_monthly, language){
+
+  label <- str_c("__label__", language)
 
   # paths to save results to
   file_name <- basename(path_in)
-  path_out <- file.path(dir_out, file_name)
-  path_subreddit <- str_replace(path_out, ".tsv.gz", str_c("-", language, "-per-subreddit.tsv.gz"))
-  path_thread <- str_replace(path_out, ".tsv.gz", str_c("-", language, "-per-thread.tsv.gz"))
+  path_out <- file.path(dir_monthly, file_name)
+  path_subreddit <- str_replace(path_out, ".tsv.gz", "-by-subreddit.tsv.gz")
+  path_thread <- str_replace(path_out, ".tsv.gz", "-by-thread.tsv.gz")
   
-  label <- str_c("__label__", language)
-
   cat(str_dup("=", 80), "\n")
   cat("- input:", path_in, "\n")
   cat("- subreddits:", path_subreddit, "\n")
@@ -101,6 +101,15 @@ if (!dir.exists(args$dir_out)) {
   }
 }
 
+dir_monthly <- file.path(args$dir_out, "monthly")
+if (!dir.exists(dir_monthly)) {
+  if (dir.create(dir_monthly, recursive = TRUE)) {
+    cat("- created directory", dir_monthly, "\n")
+  } else {
+    stop("failed to create directory ", dir_monthly, ". Do you have the necessary rights?")
+  }
+}
+
 # Step 1: two summary statistic files for each input file (submissions or
 # comments), grouped by subreddit and thread
 if (!args$skip1) {
@@ -110,7 +119,7 @@ if (!args$skip1) {
   cat(str_dup("=", 80), "\n")
   
   for (p in paths){
-    aggregate_stats(p, args$dir_out, args$lang)
+    aggregate_stats(p, dir_monthly, args$lang)
   }
 } else {
   cat(str_dup("=", 80), "\n")
@@ -120,10 +129,10 @@ if (!args$skip1) {
 
 
 # Step 2: read all the subreddit files just created as a single tidytable
-paths2 <- list.files(args$dir_out,
-                     pattern = str_c("-", args$lang, "-per-subreddit\\.tsv\\.gz$"),
+paths2 <- list.files(dir_monthly,
+                     pattern = "-by-subreddit\\.tsv\\.gz$",
                      full.names = TRUE)
-subreddits_out <- file.path(args$dir_out, str_c("posts-", args$lang,"-by-subreddit.tsv.gz"))
+subreddits_out <- file.path(args$dir_out, str_c("scores-by-subreddit.tsv.gz"))
 cat(str_dup("=", 80), "\n")
 cat("Step 2: reading", length(paths2), "files and creating a single file containing statistics for all subreddits/profile pages.\n")
 cat(str_dup("=", 80), "\n")
@@ -145,10 +154,10 @@ sr |> write_tsv(subreddits_out)
 
 # Step 3: read all the thread files individually, filter out threads in
 # irrelevant subreddits, then combine into a single tidytable
-paths3 <- list.files(args$dir_out,
-                     pattern = str_c("-", args$lang, "-per-thread\\.tsv\\.gz$"),
+paths3 <- list.files(dir_monthly,
+                     pattern = "-by-thread\\.tsv\\.gz$",
                      full.names = TRUE)
-threads_out <- file.path(args$dir_out, str_c("posts-", args$lang,"-by-thread.tsv.gz"))
+threads_out <- file.path(args$dir_out, "scores-by-thread.tsv.gz")
 cat(str_dup("=", 80), "\n")
 cat("Step 3: reading", length(paths3), "files and creating a single file containing statistics for all threads in relevant subreddits.\n")
 cat(str_dup("=", 80), "\n")
