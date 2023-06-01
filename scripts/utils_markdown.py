@@ -6,7 +6,29 @@ import json
 import re
 import snudown
 import xml.etree.ElementTree as ET
-import xml.sax.saxutils
+from html import unescape
+
+
+def dict2meta(d, index_key='id', level='text'):
+    """converts dictionary into .vrt meta data line
+
+    """
+
+    line = f'<{level}'
+
+    # make sure index is the first one
+    if index_key is not None:
+        idx = d.pop(index_key)
+        line += f' id="{idx}"'
+
+    for k in d.keys():
+        line += f' {k}="{d[k]}"'
+
+    # revert modification of original input
+    if index_key is not None:
+        d[index_key] = idx
+
+    return line + ">\n"
 
 
 def is_xml(xml_str):
@@ -43,7 +65,7 @@ def escape_spoiler(match):
 
 def process_markdown(markdown):
 
-    markdown = xml.sax.saxutils.unescape(markdown)
+    markdown = unescape(markdown)
     html = snudown.markdown(markdown, renderer=snudown.RENDERER_USERTEXT)
     html = DEC_ENTITIES.sub(repl_dec, html)
     html = HEX_ENTITIES.sub(repl_hex, html)
@@ -65,7 +87,7 @@ def process_submission(post):
 
     # collect meta data
     meta = dict()
-    meta['idx'] = post["id"]
+    meta['id'] = post["id"]
     meta['is_submission'] = True
     meta['author'] = post["author"]
     meta['date'] = str(datetime.datetime.fromtimestamp(int(post["created_utc"])))
@@ -90,7 +112,7 @@ def process_comment(post):
 
     # collect meta data
     meta = dict()
-    meta['idx'] = post["id"]
+    meta['id'] = post["id"]
     meta['is_submission'] = False
     meta['author'] = post["author"]
     meta['date'] = str(datetime.datetime.fromtimestamp(int(post["created_utc"])))
@@ -111,16 +133,24 @@ def process_comment(post):
 def process_thread(thread):
 
     submission = thread[0]      # or first encountered comment, if missing
+
+    # thread-level meta data
     is_submission = "link_id" not in submission.keys()
-    thread_id = submission['id'] if is_submission else submission['link_id']
-    subreddit = submission['subreddit']
+    permalink = submission.get('permalink', "None")
+    date = str(datetime.datetime.fromtimestamp(int(submission["created_utc"])))
+    thread_meta = {
+        'id': submission['id'] if is_submission else submission['link_id'],
+        'subreddit': submission['subreddit'],
+        'includes_submission': is_submission,
+        'date': date,
+        'year': "y" + date[:4],
+        'month': "m" + date[:7].replace("-", "_"),
+        'permalink': permalink if len(permalink) < 100 else "None"
+    }
 
-    # thread header
-    xml_str = '<thread id="%s" subreddit="%s" includes_submission="%s">\n' % (
-        thread_id, subreddit, str(is_submission)
-    )
-
-    records = list()
+    # init output str with thread header
+    xml_str = dict2meta(thread_meta)
+    meta_records = list()
     for post in thread:
 
         is_submission = "link_id" not in post.keys()
@@ -130,28 +160,19 @@ def process_thread(thread):
         else:
             xml_post, meta = process_comment(post)
 
-        records.append(meta)
+        # meta data
+        meta_records.append(meta)
+        meta.pop('permalink', None)
 
-        xml_str += (
-            '<text id="%s" is_submission="%s" author="%s" date="%s" link_id="%s" '
-            'is_submitter="%s" parent_id="%s" permalink="%s" subreddit="%s" subreddit_id="%s">\n') % (
-            meta['idx'],
-            str(meta['is_submission']),
-            meta['author'],
-            meta['date'],
-            meta['link_id'],
-            str(meta['is_submitter']),
-            meta['parent_id'],
-            meta['permalink'],
-            meta['subreddit'],
-            meta['subreddit_id']
-        )
+        # add xml string of post
+        xml_str += dict2meta(meta, level='post')
         xml_str += xml_post
-        xml_str += '</text>\n'
+        xml_str += '</post>\n'
 
-    xml_str += "</thread>\n"
+    # close thread header in xml str
+    xml_str += "</text>\n"
 
-    return xml_str, records
+    return xml_str, meta_records
 
 
 def get_html_entities():

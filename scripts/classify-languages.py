@@ -213,22 +213,22 @@ def process_file(path_in):
 def main():
 
     # parse arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--inputglob',
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--glob_in',
                         type=str,
-                        help='glob to input files [local/raw/*/R*]',
+                        help='glob to input files',
                         default="local/raw/*/R*")
     parser.add_argument('--dir_out',
                         type=str,
-                        help='where to save the results [local/]',
+                        help='where to save the results',
                         default="local/")
-    parser.add_argument('--lang_model',
+    parser.add_argument('--model',
                         type=str,
-                        help='path to language model used by fasttext [local/lid.176.bin]',
+                        help='path to language model used by fasttext',
                         default="local/lid.176.bin")
     parser.add_argument('--nr_proc',
                         type=int,
-                        help='how many processes to spawn [12]',
+                        help='how many processes to spawn',
                         default=12)
     args = parser.parse_args()
 
