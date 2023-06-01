@@ -9,10 +9,10 @@ suppressPackageStartupMessages(library(tidytable))
 parser <- ArgumentParser()
 parser$add_argument("--glob_in",
                     help = "glob to input files (in quotation marks)",
-                    default = "local/language-scores/comments/*.tsv.gz")
+                    default = "local/languages/scores/*.tsv.gz")
 parser$add_argument("--dir_out",
                     help = "directory in which to store output files",
-                    default = "local/language-scores/aggregated")
+                    default = "local/languages/de/scores/")
 parser$add_argument("--lang",
                     help = "ISO 639-1 code of the language you're interested in",
                     default = "de")

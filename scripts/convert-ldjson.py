@@ -32,15 +32,15 @@ if __name__ == '__main__':
     parser.add_argument('--path_in',
                         type=str,
                         help='path to threads in ldjson format',
-                        default="local/languages/de-gerede.ldjson.gz")
+                        default="local/languages/de/gerede.ldjson.gz")
     parser.add_argument('--path_xml',
                         type=str,
                         help="path to save texts",
-                        default="local/languages/de-gerede.xml.gz")
+                        default="local/languages/de/gerede.xml.gz")
     parser.add_argument('--path_tsv',
                         type=str,
                         help="path to save meta data",
-                        default="local/languages/de-gerede.tsv.gz")
+                        default="local/languages/de/gerede.tsv.gz")
     args = parser.parse_args()
 
     process_threads(args.path_in, args.path_xml, args.path_tsv)

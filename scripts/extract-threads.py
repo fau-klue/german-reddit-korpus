@@ -103,15 +103,15 @@ if __name__ == '__main__':
     parser.add_argument('--path_ids',
                         type=str,
                         help='path to file containing link_ids (threads) to extract',
-                        default="local/languages/de/posts-de-by-thread.tsv.gz")
+                        default="local/languages/de/scores-by-thread.tsv.gz")
     parser.add_argument('--path_out',
                         type=str,
                         help="where to save threads",
-                        default="local/languages/de-gerede.ldjson.gz")
+                        default="local/languages/de/gerede.ldjson.gz")
     parser.add_argument('--dir_monthly',
                         type=str,
                         help="where to save monthly files",
-                        default="local/languages/de-posts/")
+                        default="local/languages/de/ldjson/")
     parser.add_argument('--nr_proc',
                         type=int,
                         default=12,

@@ -174,7 +174,7 @@ def process_file(path_in):
 
     # set paths to output
     drive, tail = os.path.split(path_in)
-    drive_scores = os.path.join(DIR_OUT, "languages", "all", "scores")
+    drive_scores = DIR_OUT
     os.makedirs(drive_scores, exist_ok=True)
     path_scores = os.path.join(drive_scores, tail.replace("." + compression, ".tsv.gz"))
 
@@ -221,7 +221,7 @@ def main():
     parser.add_argument('--dir_out',
                         type=str,
                         help='where to save the results',
-                        default="local/")
+                        default="local/languages/scores/")
     parser.add_argument('--model',
                         type=str,
                         help='path to language model used by fasttext',
