@@ -122,6 +122,7 @@ def process_comment(post):
     meta['permalink'] = post.get("permalink", "")
     meta['subreddit'] = post["subreddit"]
     meta['subreddit_id'] = post["subreddit_id"]
+    # TODO include author flair
 
     # text
     body = process_markdown(post["body"])
