@@ -50,16 +50,16 @@ aggregate_stats <- function(path_in, dir_monthly, language){
   cat(str_dup("=", 80), "\n")
 
   cat("- reading\n")
-  d <- fread.(path_in,
-              select = c("link_id", "id", "created_utc", "subreddit", "language", "confidence", "length")) |>
-    mutate.(link_id = ifelse.(is.na(link_id), str_c("t3_", id), link_id)) |> # for submissions
-    drop_na.() |> 
-    mutate.(confidence = ifelse.(length == 0, NA, ifelse.(language == label, confidence, 0)))
+  d <- fread(path_in,
+             select = c("link_id", "id", "created_utc", "subreddit", "language", "confidence", "length")) |>
+    mutate(link_id = ifelse(is.na(link_id), str_c("t3_", id), link_id)) |> # for submissions
+    drop_na() |> 
+    mutate(confidence = ifelse(length == 0, NA, ifelse(language == label, confidence, 0)))
 
   cat("- summarising threads\n")
   d <- d |>
-    arrange.(created_utc) |>
-    summarise.(subreddit = last(subreddit), # a few comments belong to the same thread, but to different subreddits; apparently, this can happen when a thread is moved to another subreddit after the first comments have already been collected by pushshift
+    arrange(created_utc) |>
+    summarise(subreddit = last(subreddit), # a few comments belong to the same thread, but to different subreddits; apparently, this can happen when a thread is moved to another subreddit after the first comments have already been collected by pushshift
                confidence = weighted.mean(confidence, log(length), na.rm = TRUE), # log(length), otherwise individual very long posts can have undue influence
                length = sum(length),
                n = n(),
@@ -70,8 +70,8 @@ aggregate_stats <- function(path_in, dir_monthly, language){
   
   cat("- summarising subreddits\n")
   d |> 
-    summarise.(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
-               length = sum(length),
+    summarise(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
+              length = sum(length),
                n = n(),
                .by = subreddit) |>
     write_tsv(path_subreddit)
@@ -144,8 +144,8 @@ if (file.exists(subreddits_out) & !args$overwrite) {
 
 sr <- read_tsv(paths2, show_col_types = FALSE)
 sr <- sr |> 
-  summarise.(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
-             length = sum(length),
+  summarise(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
+            length = sum(length),
              n = sum(n),
              .by = subreddit)
 cat("- found ", sum(sr$n), " comments in ", nrow(sr)," different subreddits/profile pages.\n")
@@ -168,27 +168,27 @@ if (file.exists(threads_out) & !args$overwrite) {
 }
 
 relevant_sr <- sr |>
-  filter.(length >= 100, confidence > (exp(-sqrt(n)/4) + .015)) |> # 1.5 % is the old threshold from our paper
+  filter(length >= 100, confidence > (exp(-sqrt(n)/4) + .015)) |> # 1.5 % is the old threshold from our paper
   pull(subreddit)
 cat("- keeping threads from", length(relevant_sr), "different subreddits -- for now\n")
 
 threads <- tibble()
 for (p in paths3) {
   tmp <- fread(p) |>
-    filter.(subreddit %chin% relevant_sr)
+    filter(subreddit %chin% relevant_sr)
     cat("- number of potentially relevant threads in ", p, ": ", nrow(tmp), "\n", sep = "")
-    threads <- threads |> bind_rows.(tmp)
+    threads <- threads |> bind_rows(tmp)
 }
 
 cat("- summarising, filtering and writing output to", threads_out, "\n")
 threads <- threads |>
-  summarise.(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
+  summarise(confidence = weighted.mean(confidence, log(length), na.rm = TRUE),
              length = sum(length),
              n = sum(n),
              .by = c(subreddit, link_id)) |> # link_ids now appear to be unique
-  left_join.(sr |> select.(subreddit, sr_confidence = confidence)) |>
-  mutate.(score = confidence * sr_confidence) |>
-  filter.(confidence >= .5 & # weighted thread confidence >= 0.5
+  left_join(sr |> select(subreddit, sr_confidence = confidence)) |>
+  mutate(score = confidence * sr_confidence) |>
+  filter(confidence >= .5 & # weighted thread confidence >= 0.5
             score >= .01 & # for subreddits with very low confidence, consider only high confidence threads
             length >= 25 & # only threads containing at least 25 characters
             # at least 2 comments in thread or,
@@ -198,16 +198,16 @@ threads <- threads |>
             # filter out certain annoying subreddits (language-specific!):
             !subreddit %chin% c("removalbot", "newstweetfeed", "TheLetterH",
                                 "subreddit_simulacrum", "GoodDuckPanels")) |>
-  mutate.(threads = n(), .by = subreddit) |>
+  mutate(threads = n(), .by = subreddit) |>
   # after applying all filters above, keep only subreddits with at least 10 threads:
-  filter.(threads >= 10) |>
-  arrange.(desc.(threads))
+  filter(threads >= 10) |>
+  arrange(desc(threads))
 
 threads |>
   write_tsv(threads_out)
 
 stats <- threads |>
-  summarise.(posts = sum(n), threads = n(), .by = subreddit)
+  summarise(posts = sum(n), threads = n(), .by = subreddit)
 
 cat("- kept ", nrow(threads), " threads from ", nrow(stats)," different subreddits, containing ", sum(stats$posts)," posts in total\n")
 

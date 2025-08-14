@@ -100,37 +100,51 @@ if __name__ == '__main__':
                         type=str,
                         help='glob to raw files',
                         default="local/raw/*/R*")
+    parser.add_argument('--lang',
+                        type=str,
+                        help="ISO 639-1 code of the language you're interested in",
+                        default='de')
     parser.add_argument('--path_ids',
                         type=str,
                         help='path to file containing link_ids (threads) to extract',
-                        default="local/languages/de/scores-by-thread.tsv.gz")
+                        default=None)
     parser.add_argument('--path_out',
                         type=str,
                         help="where to save threads",
-                        default="local/languages/de/gerede.ldjson.gz")
+                        default=None)
     parser.add_argument('--dir_out',
                         type=str,
                         help="where to save monthly files",
-                        default="local/languages/de/monthly/")
+                        default=None)
     parser.add_argument('--nr_proc',
                         type=int,
                         default=12,
                         help='how many processes to spawn')
+    parser.add_argument('--skip_extraction', '-s',
+                        action='store_true',
+                        default=False,
+                        help='skip extraction process, just collect and sort monthly data')
+
     args = parser.parse_args()
 
+    path_ids = f'local/languages/{args.lang}/scores-by-thread.tsv.gz' if args.path_ids is None else args.path_ids
+    path_out = f'local/languages/{args.lang}/gerede.ldjson.gz' if args.path_out is None else args.path_out
+    dir_out = f'local/languages/{args.lang}/ldjson/' if args.dir_out is None else args.dir_out
+
     global DIR_OUT
-    DIR_OUT = args.dir_out
+    DIR_OUT = dir_out
     os.makedirs(DIR_OUT, exist_ok=True)
 
-    print("getting relevant link-ids")
-    df = read_csv(args.path_ids, sep="\t", dtype=str)
-    global link_ids
-    link_ids = set([idx.split("_")[-1] for idx in df['link_id']])
+    if not args.skip_extraction:
+        print("getting relevant link-ids")
+        df = read_csv(path_ids, sep="\t", dtype=str)
+        global link_ids
+        link_ids = set([idx.split("_")[-1] for idx in df['link_id']])
 
-    print("looping through raw files")
-    paths_raw = sorted(glob(args.glob_in))
-    paths_raw = [p for p in paths_raw if len(p.split("/")[-1].split(".")[0]) == 10]
-    multi_proc(extract_threads, paths_raw, args.nr_proc)
+        print("looping through raw files")
+        paths_raw = sorted(glob(args.glob_in))
+        paths_raw = [p for p in paths_raw if len(p.split("/")[-1].split(".")[0]) == 10]
+        multi_proc(extract_threads, paths_raw, args.nr_proc)
 
     paths_in = glob(os.path.join(args.dir_out, "*ldjson.gz"))
-    sort_threads(paths_in, args.path_out)
+    sort_threads(paths_in, path_out)

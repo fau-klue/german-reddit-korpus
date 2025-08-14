@@ -15,10 +15,14 @@ def process_threads(path_in, path_xml, path_meta):
     with gzip.open(path_in, "rt") as f, gzip.open(path_xml, mode="wt") as f_out:
         f_out.write("<corpus>\n")
         for line in f:
-            thread = ujson.loads(line)
-            xml_str, meta = process_thread(thread)
-            meta_records.extend(meta)
-            f_out.write(xml_str)
+            try:
+                thread = ujson.loads(line)
+                xml_str, meta = process_thread(thread)
+                meta_records.extend(meta)
+                f_out.write(xml_str)
+            except:
+                print("error in line, skipping")
+                print(line)
         f_out.write("</corpus>\n")
 
     print("saving meta data")
@@ -36,11 +40,14 @@ if __name__ == '__main__':
     parser.add_argument('--path_xml',
                         type=str,
                         help="path to save texts",
-                        default="local/languages/de/gerede.xml.gz")
+                        default=None)
     parser.add_argument('--path_tsv',
                         type=str,
                         help="path to save meta data",
-                        default="local/languages/de/gerede.tsv.gz")
+                        default=None)
     args = parser.parse_args()
 
-    process_threads(args.path_in, args.path_xml, args.path_tsv)
+    path_xml = args.path_in.replace('.ldjson.gz', '.xml.gz') if args.path_xml is None else args.path_xml
+    path_tsv = args.path_in.replace('.ldjson.gz', '.tsv.gz') if args.path_tsv is None else args.path_tsv
+
+    process_threads(args.path_in, path_xml, path_tsv)

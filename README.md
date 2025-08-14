@@ -1,6 +1,8 @@
 # GeRedE: A Corpus of German Reddit Exchanges #
 
-[Reddit](https://www.reddit.com) is a popular online platform combining social news aggregation, discussion and micro-blogging. **GeRedE** is a German CMC corpus containing all German threads posted on Reddit. The current version (v2) comprises all posts from the very first in 2005 until December 31, 2022.
+[Reddit](https://www.reddit.com) is a popular online platform combining social news aggregation, discussion and micro-blogging. **GeRedE** is a German CMC corpus containing all German threads posted on Reddit.
+
+The current version (v2) is based on all posts from the very first in 2005 until December 31, 2022; we identified a total of 3,221,246 threads as German.
 
 - The CWB-indexed version of our final corpus is available to registered academic users via [CQPweb](https://corpora.linguistik.uni-erlangen.de/cqpweb/gerede_v2).
 - We also provide the filtered and sorted raw data via our [web server](https://corpora.linguistik.uni-erlangen.de/data/de-gerede.ldjson.gz).  Each line is an array representing one thread, i.e. a list of the submission and corresponding comments represented as JSON objects (just as in the raw data on pushshift).  Threads are sorted by time – the first element of the array is thus usually the submission.
@@ -61,6 +63,9 @@ script arguments:
 
 ### 3. Determine German threads ###
 
+TODO: multi-process step 1
+TODO: is it possible to run step 1 for *all* languages at once?
+
 aggregate language scores (here: for German, see script arguments for other languages) by thread and by subreddit
 ```
 Rscript scripts/filter-relevant.R
@@ -94,13 +99,13 @@ python3 scripts/extract-threads.py
 ```
 this creates a file for each month
 ```
-local/languages/de/monthly/R[CS]_{YYYY}-{MM}.ldjson.gz
+local/languages/de/ldjson/R[CS]_{YYYY}-{MM}.ldjson.gz
 ```
 and a final file
 ```
 local/languages/de/gerede.ldjson.gz
 ```
-which comprises all threads classified as German.
+which comprises all threads classified as German. Note that for the final sorting, all JSON objects have to be held in memory. For German, this amounts to roughly 300Gb of RAM!
    
 script arguments:
 - to change the paths to raw data:
@@ -110,7 +115,7 @@ script arguments:
 - to change the output path:
 `--path_out "local/languages/de/gerede.ldjson.gz"`
 - to change the output directory for monthly data:
-`--dir_out "local/languages/de/monthly/"`
+`--dir_out "local/languages/de/ldjson/"`
 - to change the number of process to spawn:
 `--nr_proc 12`
 
