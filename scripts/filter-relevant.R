@@ -5,6 +5,8 @@
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(tidytable))
+suppressPackageStartupMessages(library(future))
+suppressPackageStartupMessages(library(furrr))
 
 parser <- ArgumentParser()
 parser$add_argument("--glob_in",
@@ -16,6 +18,10 @@ parser$add_argument("--dir_out",
 parser$add_argument("--lang",
                     help = "ISO 639-1 code of the language you're interested in",
                     default = "de")
+parser$add_argument("--nr_proc",
+                    help='how many processes to spawn',
+		    type = "integer",
+                    default = 12)
 parser$add_argument("-o", "--overwrite",
                     action = "store_true",
                     help = "overwrite existing files?",
@@ -118,10 +124,11 @@ if (!args$skip1) {
   cat(str_dup("=", 80), "\n")
   cat("Step 1: reading", length(paths), "files and creating file-wise summary statistics by subreddit and thread.\n")
   cat(str_dup("=", 80), "\n")
-  
-  for (p in paths){
-    aggregate_stats(p, dir_monthly, args$lang)
-  }
+
+  # multi-processing
+  plan(multisession, workers = args$nr_proc)
+  future_map(paths, ~ aggregate_stats(.x, dir_monthly, args$lang))
+
 } else {
   cat(str_dup("=", 80), "\n")
   cat("Skipping step 1.\n")
