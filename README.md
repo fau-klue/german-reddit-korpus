@@ -4,10 +4,10 @@
 
 The current version (v2) is based on all posts from the very first in 2005 until December 31, 2022; we identified a total of 3,221,246 threads as German.
 
-- The CWB-indexed version of our final corpus is available to registered academic users via [CQPweb](https://corpora.linguistik.uni-erlangen.de/cqpweb/gerede_v2).
+- The CWB-indexed version of our final corpus is available to registered academic users via [CQPweb](https://corpora.linguistik.uni-erlangen.de/data/gerede-v2-dev3.ldjson.gz).
 - We also provide the filtered and sorted raw data via our [web server](https://corpora.linguistik.uni-erlangen.de/data/de-gerede.ldjson.gz).  Each line is an array representing one thread, i.e. a list of the submission and corresponding comments represented as JSON objects (just as in the raw data on pushshift).  Threads are sorted by time – the first element of the array is thus usually the submission.
 
-The repository at hand contains the scripts we used to extract German threads from the vast amount of data Jason Baumgartner provides at [pushshift](https://files.pushshift.io/reddit) and to convert them into XML/VRT (which is the input format for CWB/CQPweb).
+The repository at hand contains the scripts we used to extract German threads from the vast amount of data Jason Baumgartner used to provide at [pushshift](https://files.pushshift.io/reddit) and to convert them into XML/VRT (which is the input format for CWB/CQPweb).
 
 
 ## Steps for recreating the corpus ##
@@ -28,7 +28,13 @@ In order to run the R script (step 3), you will need the following libraries:
     data.table
     R.utils
     tidyverse
+    future
+    furrr
     tidytable
+
+On Ubuntu, you can install almost all of these packages via apt:
+
+    sudo apt install r-cran-argparse r-cran-data.table r-cran-r.utils r-cran-tidyverse r-cran-future r-cran-furrr
     
 For POS annotation (see step 6), you will need the German Web and Social Media [model](https://corpora.linguistik.uni-erlangen.de/someweta/german_web_social_media_2020-05-28.model) of [SoMeWeTa](https://github.com/tsproisl/SoMeWeTa).  By default, the scripts assume it is located at `local/german_web_social_media_2020-05-28.model`.
 
@@ -63,8 +69,7 @@ script arguments:
 
 ### 3. Determine German threads ###
 
-TODO: multi-process step 1
-TODO: is it possible to run step 1 for *all* languages at once?
+**TODO**: Can we run step 1 for all languages at once?
 
 aggregate language scores (here: for German, see script arguments for other languages) by thread and by subreddit
 ```
@@ -88,7 +93,9 @@ script arguments:
 `--glob_in "local/languages/scores/*.tsv.gz"`
 - to change the output directory:
 `--dir_out "local/languages/"`
-- to overwrite existing files in the output directory, use the flag `-o` (by default, the program won't overwrite files, so you can restart it and continue the process without losing data if it runs out of memory)
+- to change the number of process to spawn:
+`--nr_proc 12`
+- to overwrite existing files in the output directory, use the flag `-o` (by default, the program won't overwrite files, so you can restart it and continue the process without losing data if it e.g. runs out of memory)
 - if you only want to redo the filtering process after the files for individual months have already been created, you can skip this first step using the flag `-s` (probably together with `-o`)
 
 ### 4. Extract posts and reconstruct threads ###
@@ -121,7 +128,7 @@ script arguments:
 
 ### 5. Convert to XML ###
 
-build XML file (selected meta data and texts) and a separate TSV table of selected meta data
+build XML file (texts and selected meta data) and a separate TSV table of selected meta data
 ```
 python3 scripts/convert-ldjson.py
 ```
@@ -131,7 +138,7 @@ local/languages/de/gerede.xml.gz
 local/languages/de/gerede.tsv.gz
 ```
 
-arguments:
+script arguments:
 - to change the input path:
 `--path_in "local/languages/de/gerede.ldjson.gz"`
 - to change the output path for XML file:
