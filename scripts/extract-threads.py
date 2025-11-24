@@ -146,5 +146,5 @@ if __name__ == '__main__':
         paths_raw = [p for p in paths_raw if len(p.split("/")[-1].split(".")[0]) == 10]
         multi_proc(extract_threads, paths_raw, args.nr_proc)
 
-    paths_in = glob(os.path.join(args.dir_out, "*ldjson.gz"))
+    paths_in = glob(os.path.join(dir_out, "*ldjson.gz"))
     sort_threads(paths_in, path_out)
